@@ -5,7 +5,7 @@ const DAY = 6;
 let member = 0;
 const ROUND = 3;
 let MAX_GROUP_SIZE = 0;
-const SAMPLE_ROUND = 1000;
+const SAMPLE_ROUND = 1;
 const data = [];
 const COMPARE_MODE = Object.freeze({
   EXACT: "exact",
@@ -78,7 +78,12 @@ async function processForm() {
   }
 
   xlsx.writeFile(out_wb, "output.xlsx");
-  return false;
+  reset();
+}
+
+function reset() {
+  data.length = 0;
+  member = 0;
 }
 
 /**
@@ -144,7 +149,7 @@ function create_group_leader_sheet(wb) {
  */
 function random_group(compare_obj = []) {
   const samples = [];
-  for (let i = 0; i < SAMPLE_ROUND || samples.length === 0; i++) {
+  for (let i = 0; i < SAMPLE_ROUND; i++) {
     const { groups, group_for_member, group_leaders } = sample_group();
     if (!validate_group(groups)) continue;
     const err = calculate_combination_error(groups, compare_obj);
@@ -308,7 +313,7 @@ function validate_group(groups) {
       // check group size
       if (Math.abs(MAX_GROUP_SIZE - group.length) > 1) {
         console.warn(
-          `Group size not valid: expected ${MAX_GROUP_SIZE} += 1, but found ${group.length}`,
+          `Group size not valid: expected ${MAX_GROUP_SIZE} +- 1, but found ${group.length}`,
           group
         );
         return false;
