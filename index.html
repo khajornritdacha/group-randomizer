@@ -10,21 +10,40 @@
       <input type="file" id="input-file" />
       <input type="submit" value="Upload" />
     </form>
-    <!-- <script src="index.js" type="module" defer></script> -->
     <script type="module">
       import * as xlsx from "./xlsx.mjs";
 
+      // TODO: add only one sex day
       const GROUP = 13;
       const DAY = 6;
       let member = 0;
       const ROUND = 3;
-      let MAX_MEMBER = 0;
+      let MAX_GROUP_SIZE = 0;
       const SAMPLE_ROUND = 10;
       const data = [];
       const COMPARE_MODE = Object.freeze({
         EXACT: "exact",
         EXACT_SOME: "exact_some",
       });
+      const COMPARE_OBJ = [
+        {
+          mode: COMPARE_MODE.EXACT,
+          attr: "roles",
+          weight: 0.3,
+        },
+        {
+          mode: COMPARE_MODE.EXACT,
+          attr: "baan",
+          weight: 0.3,
+        },
+        {
+          mode: COMPARE_MODE.EXACT_SOME,
+          attr: "ex_camp",
+          weight: 0.4,
+          value: [1],
+        },
+      ];
+
       async function processForm(e) {
         if (e.preventDefault) e.preventDefault();
 
@@ -55,7 +74,7 @@
           });
           member++;
         }
-        MAX_MEMBER = Math.ceil(member / GROUP);
+        MAX_GROUP_SIZE = Math.ceil(member / GROUP);
 
         // Insert database sheet
         const out_wb = xlsx.utils.book_new();
@@ -65,20 +84,20 @@
           "database"
         );
 
-        const { groups, group_for_member, group_leaders } = random_group();
+        const { groups, group_for_member, group_leaders } =
+          random_group(COMPARE_OBJ);
         create_group_assign_sheet(out_wb);
         insert_group_to_wb(out_wb, group_for_member);
 
         create_group_leader_sheet(out_wb);
         insert_group_leader_to_wb(out_wb, group_leaders);
 
-        // if (!("control" in workbook.Sheets)) {
-        //   console.log("Creating control sheet");
-        //   modify_control_sheet(workbook);
-        // }
-        // const group_assign = generate_group_assign();
-        // const out_ws = xlsx.utils.aoa_to_sheet(group_assign);
-        // xlsx.utils.book_append_sheet(workbook, out_ws, "group_assign");
+        const is_generate_control_sheet = false;
+        if (is_generate_control_sheet && !("control" in workbook.Sheets)) {
+          console.log("Creating control sheet");
+          modify_control_sheet(workbook);
+        }
+
         xlsx.writeFile(out_wb, "output.xlsx");
         return false;
       }
@@ -148,6 +167,7 @@
        * @returns {{groups: number[][], group_leaders: string[][], err: number}}
        */
       function random_group(compare_obj = []) {
+        console.log(compare_obj);
         const samples = [];
         for (let i = 0; i < SAMPLE_ROUND || samples.length === 0; i++) {
           const { groups, group_for_member, group_leaders } = sample_group();
@@ -188,14 +208,16 @@
           for (let r = 0; r < ROUND; r++) {
             for (let d = 0; d < DAY; d++) {
               const group_id = calculate_group_id(g, r, d);
+              let is_group_leader = false;
               if (
                 cat[r][g].leader_round &&
                 Math.floor(d / 2) === cat[r][g].leader_round - 1
               ) {
                 if (group_leaders[g][d]) console.warn("Duplicate leader");
                 group_leaders[g][d] = cat[r][g].names;
+                is_group_leader = true;
               }
-              groups[group_id - 1][d].push(cat[r][g]);
+              groups[group_id - 1][d].push({ ...cat[r][g], is_group_leader });
               group_for_member[cat[r][g].id - 1].push(group_id);
             }
           }
@@ -229,6 +251,9 @@
               groups[g][d],
               compare_obj
             );
+
+            if (error_for_group < 1)
+              console.warn("Group error < 1", error_for_group);
             error_for_day += error_for_group * error_for_group;
           }
           total_error += error_for_day * error_for_day;
@@ -243,13 +268,13 @@
        * @return {number} error score
        */
       function calculate_group_error(groups, compare_obj) {
-        let total_error = 0;
+        let total_error = 1;
         compare_obj.forEach((cmp) => {
           for (let i = 0; i < groups.length; i++) {
             for (let j = i + 1; j < groups.length; j++) {
-              if (!validate_attr(groups[i], groups[j], attr)) continue;
+              if (!validate_attr(groups[i], groups[j], cmp.attr)) continue;
               const error = calculate_error(groups[i], groups[j], cmp);
-              total_error += error * weight;
+              total_error += error * cmp.weight;
             }
           }
         });
@@ -264,11 +289,11 @@
        * @return{boolean}
        */
       function validate_attr(m1, m2, attr) {
-        if (!(attr in m1[0])) {
+        if (!(attr in m1)) {
           console.warn(`Attribute ${attr} not found in member ${m1}`);
           return false;
         }
-        if (!(attr in m2[0])) {
+        if (!(attr in m2)) {
           console.warn(`Attribute ${attr} not found in member ${m1}`);
           return false;
         }
@@ -286,13 +311,10 @@
         let error = 0;
         switch (cmp.mode) {
           case COMPARE_MODE.EXACT:
-            if (m1[0][cmp.attr] === m2[0][cmp.attr]) error++;
+            if (m1[cmp.attr] === m2[cmp.attr]) error++;
             break;
           case COMPARE_MODE.EXACT_SOME:
-            if (
-              m1[0][cmp.attr] === m2[0][cmp.attr] &&
-              m1[0][cmp.attr] in cmp.value
-            )
+            if (m1[cmp.attr] === m2[cmp.attr] && m1[cmp.attr] in cmp.value)
               error++;
             break;
           default:
@@ -308,7 +330,26 @@
        * @returns {boolean}
        */
       function validate_group(groups) {
-        // TODO: validate group
+        for (let g = 0; g < GROUP; g++) {
+          for (let d = 0; d < DAY; d++) {
+            const group = groups[g][d];
+            // check group size
+            if (Math.abs(MAX_GROUP_SIZE - group.length) > 1) {
+              console.warn(`Group size not valid: ${group.length}`, group);
+              return false;
+            }
+
+            // check group leader
+            const group_leader = group.filter((m) => m.is_group_leader);
+            if (group_leader.length !== 1) {
+              console.warn(
+                `Group leader not valid: ${group_leader.length}`,
+                group
+              );
+              return false;
+            }
+          }
+        }
         return true;
       }
 
@@ -320,7 +361,7 @@
        * @returns {number}
        */
       function calculate_group_id(g, r, d) {
-        if (r === 0) r = MAX_MEMBER;
+        if (r === 0) r = MAX_GROUP_SIZE;
         return ((g + r * d) % GROUP) + 1;
       }
 
