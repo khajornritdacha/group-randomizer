@@ -21,6 +21,10 @@
       let MAX_MEMBER = 0;
       const SAMPLE_ROUND = 10;
       const data = [];
+      const COMPARE_MODE = Object.freeze({
+        EXACT: "exact",
+        EXACT_SOME: "exact_some",
+      });
       async function processForm(e) {
         if (e.preventDefault) e.preventDefault();
 
@@ -140,14 +144,15 @@
 
       /**
        * Random best possible group
+       * @param {Object[]} compare_obj Array of compare object with mode and attr and (optional) value
        * @returns {{groups: number[][], group_leaders: string[][], err: number}}
        */
-      function random_group() {
+      function random_group(compare_obj = []) {
         const samples = [];
         for (let i = 0; i < SAMPLE_ROUND || samples.length === 0; i++) {
           const { groups, group_for_member, group_leaders } = sample_group();
           if (!validate_group(groups)) continue;
-          const err = calculate_error_score(groups);
+          const err = calculate_error_score(groups, compare_obj);
           samples.push({ groups, group_for_member, group_leaders, err });
         }
         const min_err = Math.min(...samples.map((s) => s.err));
@@ -170,7 +175,9 @@
         const group_leaders = Array.from({ length: GROUP }, (_, i) =>
           Array.from({ length: DAY }, (_, i) => "")
         );
-        const groups = Array.from({ length: GROUP }, (_, i) => []);
+        const groups = Array.from({ length: GROUP }, (_, i) =>
+          Array.from({ length: DAY }, (_, i) => [])
+        );
         const cat = Array.from({ length: ROUND + 1 }, (_, i) => []);
         data.forEach((d, i) => {
           const leader_round = d.leader_round;
@@ -188,14 +195,14 @@
                 if (group_leaders[g][d]) console.warn("Duplicate leader");
                 group_leaders[g][d] = cat[r][g].names;
               }
-              groups[group_id - 1].push(cat[r][g]);
+              groups[group_id - 1][d].push(cat[r][g]);
               group_for_member[cat[r][g].id - 1].push(group_id);
             }
           }
           if (g < cat[ROUND].length) {
             for (let d = 0; d < DAY; d++) {
               const group_id = calculate_group_id(g, ROUND, d);
-              groups[group_id - 1].push(cat[ROUND][g]);
+              groups[group_id - 1][d].push(cat[ROUND][g]);
               group_for_member[cat[ROUND][g].id - 1].push(group_id);
             }
           }
@@ -207,8 +214,92 @@
         };
       }
 
-      function calculate_error_score(groups) {
-        return 0;
+      /**
+       * Calculate error score for group combination by squaring the error for each group and each day
+       * @param {Object[][][]} groups group combination
+       * @param {Object[]} compare_obj Array of compare object with mode and attr and (optional) value
+       * @return {number} error score
+       */
+      function calculate_error_score(groups, compare_obj) {
+        let total_error = 0;
+        for (let d = 0; d < DAY; d++) {
+          let error_for_day = 0;
+          for (let g = 0; g < GROUP; g++) {
+            const error_for_group = calculate_group_error(
+              groups[g][d],
+              compare_obj
+            );
+            error_for_day += error_for_group * error_for_group;
+          }
+          total_error += error_for_day * error_for_day;
+        }
+        return total_error;
+      }
+
+      /**
+       * Calculate error score for a group
+       * @param {Object[]} groups
+       * @param {Object[]} compare_obj Array of compare object with mode and attr and (optional) value
+       * @return {number} error score
+       */
+      function calculate_group_error(groups, compare_obj) {
+        let total_error = 0;
+        compare_obj.forEach((cmp) => {
+          for (let i = 0; i < groups.length; i++) {
+            for (let j = i + 1; j < groups.length; j++) {
+              if (!validate_attr(groups[i], groups[j], attr)) continue;
+              const error = calculate_error(groups[i], groups[j], cmp);
+              total_error += error * weight;
+            }
+          }
+        });
+        return total_error;
+      }
+
+      /**
+       * Validate attribute in members m1 and m2, return true if valid
+       * @param{Object} m1
+       * @param{Object} m2
+       * @param{string} attr
+       * @return{boolean}
+       */
+      function validate_attr(m1, m2, attr) {
+        if (!(attr in m1[0])) {
+          console.warn(`Attribute ${attr} not found in member ${m1}`);
+          return false;
+        }
+        if (!(attr in m2[0])) {
+          console.warn(`Attribute ${attr} not found in member ${m1}`);
+          return false;
+        }
+        return true;
+      }
+
+      /**
+       * Calculate error for a pair of member a and b
+       * @param{Object} m1
+       * @param{Object} m2
+       * @param{Object} cmp Compare object with mode and attr and (optional) value
+       * @return{number} error score
+       */
+      function calculate_error(m1, m2, cmp) {
+        let error = 0;
+        switch (cmp.mode) {
+          case COMPARE_MODE.EXACT:
+            if (m1[0][cmp.attr] === m2[0][cmp.attr]) error++;
+            break;
+          case COMPARE_MODE.EXACT_SOME:
+            if (
+              m1[0][cmp.attr] === m2[0][cmp.attr] &&
+              m1[0][cmp.attr] in cmp.value
+            )
+              error++;
+            break;
+          default:
+            console.warn(`Compare mode ${mode} not found`);
+            break;
+        }
+        return error;
       }
 
       /**
@@ -217,6 +308,7 @@
        * @returns {boolean}
        */
       function validate_group(groups) {
+        // TODO: validate group
         return true;
       }
 
