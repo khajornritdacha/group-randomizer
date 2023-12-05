@@ -19,6 +19,7 @@
       let member = 0;
       const ROUND = 3;
       let MAX_MEMBER = 0;
+      const SAMPLE_ROUND = 10;
       const data = [];
       async function processForm(e) {
         if (e.preventDefault) e.preventDefault();
@@ -51,8 +52,6 @@
           member++;
         }
         MAX_MEMBER = Math.ceil(member / GROUP);
-        // console.log(`${member} members`);
-        // console.log(data);
 
         // Insert database sheet
         const out_wb = xlsx.utils.book_new();
@@ -62,26 +61,12 @@
           "database"
         );
 
-        // Insert Group Assign Sheet
-        // if (!("group_assign" in workbook.Sheets)) {
-        //   console.log("Creating group_assign sheet");
-        // } else {
-        //   xlsx.utils.book_append_sheet(
-        //     out_wb,
-        //     workbook.Sheets["group_assign"],
-        //     "group_assign"
-        //     );
-        //   }
-        const { groups, group_leaders } = random_group();
+        const { groups, group_for_member, group_leaders } = random_group();
         create_group_assign_sheet(out_wb);
-        assign_group(out_wb, groups);
+        insert_group_to_wb(out_wb, group_for_member);
 
-        // TODO: handle group leader sheet does not exist
-        // if (!("leader_group" in workbook.Sheets)) {
-        //   console.log("Creating leader_group sheet");
-        // }
         create_group_leader_sheet(out_wb);
-        assign_group_leader(out_wb, group_leaders);
+        insert_group_leader_to_wb(out_wb, group_leaders);
 
         // if (!("control" in workbook.Sheets)) {
         //   console.log("Creating control sheet");
@@ -154,48 +139,85 @@
       }
 
       /**
-       * Generate random group
-       * @returns {number[][]}
+       * Random best possible group
+       * @returns {{groups: number[][], group_leaders: string[][], err: number}}
        */
       function random_group() {
-        const groups = Array.from({ length: member }, (_, i) => []);
+        const samples = [];
+        for (let i = 0; i < SAMPLE_ROUND || samples.length === 0; i++) {
+          const { groups, group_for_member, group_leaders } = sample_group();
+          if (!validate_group(groups)) continue;
+          const err = calculate_error_score(groups);
+          samples.push({ groups, group_for_member, group_leaders, err });
+        }
+        const min_err = Math.min(...samples.map((s) => s.err));
+        const idx = samples.findIndex((s) => s.err === min_err);
+        if (idx === -1) console.warn("No valid group");
+        else console.log(`Minimum error of group: ${min_err}`);
+        return samples[idx];
+      }
+
+      /**
+       * Generate random group and return 3 values
+       * 1. Group indexes by group number
+       * 2. Group indexes by member number
+       * 3. Group leaders by group number
+       * @returns {{groups: Object[][], group_for_member: number[][], group_leaders: string[][]}}
+       */
+      function sample_group() {
+        const group_for_member = Array.from({ length: member }, (_, i) => []);
         shuffle(data);
         const group_leaders = Array.from({ length: GROUP }, (_, i) =>
           Array.from({ length: DAY }, (_, i) => "")
         );
-        const G = Array.from({ length: ROUND + 1 }, (_, i) => []);
-        const cat = Array.from({ length: GROUP }, (_, i) => []);
+        const groups = Array.from({ length: GROUP }, (_, i) => []);
+        const cat = Array.from({ length: ROUND + 1 }, (_, i) => []);
         data.forEach((d, i) => {
           const leader_round = d.leader_round;
-          if (!leader_round) G[ROUND].push(d);
-          else G[leader_round - 1].push(d);
+          if (!leader_round) cat[ROUND].push(d);
+          else cat[leader_round - 1].push(d);
         });
         for (let g = 0; g < GROUP; g++) {
           for (let r = 0; r < ROUND; r++) {
-            cat[g].push(G[r][g]);
             for (let d = 0; d < DAY; d++) {
               const group_id = calculate_group_id(g, r, d);
               if (
-                G[r][g].leader_round &&
-                Math.floor(d / 2) === G[r][g].leader_round - 1
+                cat[r][g].leader_round &&
+                Math.floor(d / 2) === cat[r][g].leader_round - 1
               ) {
                 if (group_leaders[g][d]) console.warn("Duplicate leader");
-                group_leaders[g][d] = G[r][g].names;
+                group_leaders[g][d] = cat[r][g].names;
               }
-              groups[G[r][g].id - 1].push(group_id);
+              groups[group_id - 1].push(cat[r][g]);
+              group_for_member[cat[r][g].id - 1].push(group_id);
             }
           }
-          if (g < G[ROUND].length) {
-            cat[g].push(G[ROUND][g]);
+          if (g < cat[ROUND].length) {
             for (let d = 0; d < DAY; d++) {
-              groups[G[ROUND][g].id - 1].push(calculate_group_id(g, ROUND, d));
+              const group_id = calculate_group_id(g, ROUND, d);
+              groups[group_id - 1].push(cat[ROUND][g]);
+              group_for_member[cat[ROUND][g].id - 1].push(group_id);
             }
           }
         }
         return {
           groups,
+          group_for_member,
           group_leaders,
         };
+      }
+
+      function calculate_error_score(groups) {
+        return 0;
+      }
+
+      /**
+       * Returns true if group is valid
+       * @param {Object[][]} groups
+       * @returns {boolean}
+       */
+      function validate_group(groups) {
+        return true;
       }
 
       /**
@@ -239,18 +261,10 @@
        * Assign group to group assign sheet
        * @param {xlsx.WorkBook} wb
        */
-      function assign_group(wb, groups) {
+      function insert_group_to_wb(wb, groups) {
         xlsx.utils.sheet_add_aoa(wb.Sheets["group_assign"], groups, {
           origin: "E2",
         });
-
-        // console.log(group_leaders);
-        // xlsx.utils.sheet_add_aoa(wb.Sheets["leader_group"], group_leaders, {
-        //   origin: "B2",
-        // });
-        // const group_leaders_aoa = generate_group_leader_aoa(group_leaders);
-        // const leader_ws = xlsx.utils.aoa_to_sheet(group_leaders_aoa);
-        // xlsx.utils.book_append_sheet(wb, leader_ws, "leader_group");
       }
 
       /**
@@ -258,8 +272,8 @@
        * @param {xlsx.WorkBook} wb
        * @param {string[][]} group_leaders
        */
-      function assign_group_leader(wb, group_leaders) {
-        xlsx.utils.sheet_add_aoa(wb.Sheets["leader_group"], group_leaders, {
+      function insert_group_leader_to_wb(wb, group_leaders) {
+        xlsx.utils.sheet_add_aoa(wb.Sheets["group_leader"], group_leaders, {
           origin: "B2",
         });
       }
