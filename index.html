@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <form id="file-form">
+      <input type="file" id="input-file" />
+      <input type="submit" value="Upload" />
+    </form>
+    <!-- <script src="index.js" type="module" defer></script> -->
+    <script type="module">
+      import * as xlsx from "./xlsx.mjs";
+
+      const GROUP = 13;
+      const DAY = 6;
+      let member = 0;
+      const ROUND = 3;
+      let MAX_MEMBER = 0;
+      const data = [];
+      async function processForm(e) {
+        if (e.preventDefault) e.preventDefault();
+
+        console.log("File uploaded");
+
+        const file_form = document.getElementById("input-file");
+        if (!file_form.files.length) {
+          console.log("No file selected");
+          return false;
+        }
+
+        const file = file_form.files[0];
+        const raw_sheet = await file.arrayBuffer();
+        /* raw_sheet is an ArrayBuffer */
+        const workbook = xlsx.read(raw_sheet);
+
+        // Extract member data
+        // id start from 1
+        for (let i = 2; ; i++) {
+          if (!workbook.Sheets["database"][`A${i}`]) break;
+          data.push({
+            names: workbook.Sheets["database"][`A${i}`].v,
+            roles: workbook.Sheets["database"][`D${i}`].v,
+            baan: workbook.Sheets["database"][`E${i}`].v,
+            ex_camp: workbook.Sheets["database"][`F${i}`].v,
+            id: i - 1,
+            leader_round: workbook.Sheets["database"][`J${i}`]?.v,
+          });
+          member++;
+        }
+        MAX_MEMBER = Math.ceil(member / GROUP);
+        // console.log(`${member} members`);
+        // console.log(data);
+
+        // Insert database sheet
+        const out_wb = xlsx.utils.book_new();
+        xlsx.utils.book_append_sheet(
+          out_wb,
+          workbook.Sheets["database"],
+          "database"
+        );
+
+        // Insert Group Assign Sheet
+        // if (!("group_assign" in workbook.Sheets)) {
+        //   console.log("Creating group_assign sheet");
+        // } else {
+        //   xlsx.utils.book_append_sheet(
+        //     out_wb,
+        //     workbook.Sheets["group_assign"],
+        //     "group_assign"
+        //     );
+        //   }
+        const { groups, group_leaders } = random_group();
+        create_group_assign_sheet(out_wb);
+        assign_group(out_wb, groups);
+
+        // TODO: handle group leader sheet does not exist
+        // if (!("leader_group" in workbook.Sheets)) {
+        //   console.log("Creating leader_group sheet");
+        // }
+        create_group_leader_sheet(out_wb);
+        assign_group_leader(out_wb, group_leaders);
+
+        // if (!("control" in workbook.Sheets)) {
+        //   console.log("Creating control sheet");
+        //   modify_control_sheet(workbook);
+        // }
+        // const group_assign = generate_group_assign();
+        // const out_ws = xlsx.utils.aoa_to_sheet(group_assign);
+        // xlsx.utils.book_append_sheet(workbook, out_ws, "group_assign");
+        xlsx.writeFile(out_wb, "output.xlsx");
+        return false;
+      }
+
+      /**
+       *
+       * @param {xlsx.WorkBook} wb
+       */
+      function create_group_assign_sheet(wb) {
+        const group_assign = [
+          [
+            "ชื่อ",
+            "โครง",
+            "บ้าน",
+            "เป็นชาวค่ายเก่า",
+            ...Array.from({ length: DAY }, (_, i) => `วันที่ ${i + 1}`),
+          ],
+        ];
+        for (let i = 1; i <= member; i++) {
+          group_assign.push([
+            { t: "n", f: `=database!A${i + 1}` },
+            {
+              t: "n",
+              f: `=VLOOKUP(A${i + 1},database!$A$2:$I${member + 1}, 4, 0)`,
+            },
+            {
+              t: "n",
+              f: `=VLOOKUP(A${i + 1},database!$A$2:$I${member + 1}, 5, 0)`,
+            },
+            {
+              t: "n",
+              f: `=2-VLOOKUP(A${i + 1},database!$A$2:$I${member + 1}, 6, 0)`,
+            },
+          ]);
+        }
+        xlsx.utils.book_append_sheet(
+          wb,
+          xlsx.utils.aoa_to_sheet(group_assign),
+          "group_assign"
+        );
+      }
+
+      /**
+       * Assign group leader
+       * @param {xlsx.WorkBook} wb
+       */
+      function create_group_leader_sheet(wb) {
+        const group_leader = [
+          [
+            "group/day",
+            ...Array.from({ length: DAY }, (_, i) => `วันที่ ${i + 1}`),
+          ],
+        ];
+        for (let i = 1; i <= GROUP; i++) {
+          group_leader.push([i]);
+        }
+        xlsx.utils.book_append_sheet(
+          wb,
+          xlsx.utils.aoa_to_sheet(group_leader),
+          "group_leader"
+        );
+      }
+
+      /**
+       * Generate random group
+       * @returns {number[][]}
+       */
+      function random_group() {
+        const groups = Array.from({ length: member }, (_, i) => []);
+        shuffle(data);
+        const group_leaders = Array.from({ length: GROUP }, (_, i) =>
+          Array.from({ length: DAY }, (_, i) => "")
+        );
+        const G = Array.from({ length: ROUND + 1 }, (_, i) => []);
+        const cat = Array.from({ length: GROUP }, (_, i) => []);
+        data.forEach((d, i) => {
+          const leader_round = d.leader_round;
+          if (!leader_round) G[ROUND].push(d);
+          else G[leader_round - 1].push(d);
+        });
+        for (let g = 0; g < GROUP; g++) {
+          for (let r = 0; r < ROUND; r++) {
+            cat[g].push(G[r][g]);
+            for (let d = 0; d < DAY; d++) {
+              const group_id = calculate_group_id(g, r, d);
+              if (
+                G[r][g].leader_round &&
+                Math.floor(d / 2) === G[r][g].leader_round - 1
+              ) {
+                if (group_leaders[g][d]) console.warn("Duplicate leader");
+                group_leaders[g][d] = G[r][g].names;
+              }
+              groups[G[r][g].id - 1].push(group_id);
+            }
+          }
+          if (g < G[ROUND].length) {
+            cat[g].push(G[ROUND][g]);
+            for (let d = 0; d < DAY; d++) {
+              groups[G[ROUND][g].id - 1].push(calculate_group_id(g, ROUND, d));
+            }
+          }
+        }
+        return {
+          groups,
+          group_leaders,
+        };
+      }
+
+      /**
+       * Calculate group id
+       * @param {number} g
+       * @param {number} r
+       * @param {number} d
+       * @returns {number}
+       */
+      function calculate_group_id(g, r, d) {
+        if (r === 0) r = MAX_MEMBER;
+        return ((g + r * d) % GROUP) + 1;
+      }
+
+      /**
+       * Shuffle array
+       * @param {any[]} array
+       * @returns {any[]}
+       */
+      function shuffle(array) {
+        let currentIndex = array.length,
+          randomIndex;
+
+        // While there remain elements to shuffle.
+        while (currentIndex > 0) {
+          // Pick a remaining element.
+          randomIndex = Math.floor(Math.random() * currentIndex);
+          currentIndex--;
+
+          // And swap it with the current element.
+          [array[currentIndex], array[randomIndex]] = [
+            array[randomIndex],
+            array[currentIndex],
+          ];
+        }
+
+        return array;
+      }
+
+      /**
+       * Assign group to group assign sheet
+       * @param {xlsx.WorkBook} wb
+       */
+      function assign_group(wb, groups) {
+        xlsx.utils.sheet_add_aoa(wb.Sheets["group_assign"], groups, {
+          origin: "E2",
+        });
+
+        // console.log(group_leaders);
+        // xlsx.utils.sheet_add_aoa(wb.Sheets["leader_group"], group_leaders, {
+        //   origin: "B2",
+        // });
+        // const group_leaders_aoa = generate_group_leader_aoa(group_leaders);
+        // const leader_ws = xlsx.utils.aoa_to_sheet(group_leaders_aoa);
+        // xlsx.utils.book_append_sheet(wb, leader_ws, "leader_group");
+      }
+
+      /**
+       * Assign group leader to group leader sheet
+       * @param {xlsx.WorkBook} wb
+       * @param {string[][]} group_leaders
+       */
+      function assign_group_leader(wb, group_leaders) {
+        xlsx.utils.sheet_add_aoa(wb.Sheets["leader_group"], group_leaders, {
+          origin: "B2",
+        });
+      }
+
+      function modify_control_sheet(wb) {
+        const control = [];
+        const max_col_member = xlsx.utils.encode_col(3 + DAY);
+        for (let i = 1, row = 2; i <= member; i++) {
+          for (let j = 1; j <= member; j++, row++) {
+            control.push([
+              {
+                t: "n",
+                f: `=COUNTIF(D${row}:${xlsx.utils.encode_col(
+                  2 + DAY
+                )}${row},"TRUE")`,
+              },
+              { t: "n", f: `=database!A${i + 1}` },
+              { t: "n", f: `=database!A${j + 1}` },
+              ...Array.from({ length: DAY }, (_, i) => ({
+                t: "n",
+                f: `=EXACT(VLOOKUP($B${row},group_assign!$A$2:$${max_col_member}${
+                  member + 1
+                }, ${
+                  5 + i
+                }, 0),VLOOKUP($C${row},group_assign!$A$2:$${max_col_member}${
+                  member + 1
+                }, ${5 + i}, 0))`,
+              })),
+            ]);
+          }
+        }
+        xlsx.utils.sheet_add_aoa(wb.Sheets["control"], control, {
+          origin: "A2",
+        });
+      }
+
+      const form = document.getElementById("file-form");
+      if (form.attachEvent) {
+        form.AttachEvent("submit", processForm);
+      } else {
+        form.addEventListener("submit", processForm);
+      }
+    </script>
+  </body>
+</html>
