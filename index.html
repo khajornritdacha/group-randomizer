@@ -19,7 +19,7 @@
       let member = 0;
       const ROUND = 3;
       let MAX_GROUP_SIZE = 0;
-      const SAMPLE_ROUND = 10;
+      const SAMPLE_ROUND = 1000;
       const data = [];
       const COMPARE_MODE = Object.freeze({
         EXACT: "exact",
@@ -34,12 +34,12 @@
         {
           mode: COMPARE_MODE.EXACT,
           attr: "baan",
-          weight: 0.3,
+          weight: 0.2,
         },
         {
           mode: COMPARE_MODE.EXACT_SOME,
           attr: "ex_camp",
-          weight: 0.4,
+          weight: 0.5,
           value: [1],
         },
       ];
@@ -167,12 +167,11 @@
        * @returns {{groups: number[][], group_leaders: string[][], err: number}}
        */
       function random_group(compare_obj = []) {
-        console.log(compare_obj);
         const samples = [];
         for (let i = 0; i < SAMPLE_ROUND || samples.length === 0; i++) {
           const { groups, group_for_member, group_leaders } = sample_group();
           if (!validate_group(groups)) continue;
-          const err = calculate_error_score(groups, compare_obj);
+          const err = calculate_combination_error(groups, compare_obj);
           samples.push({ groups, group_for_member, group_leaders, err });
         }
         const min_err = Math.min(...samples.map((s) => s.err));
@@ -242,7 +241,7 @@
        * @param {Object[]} compare_obj Array of compare object with mode and attr and (optional) value
        * @return {number} error score
        */
-      function calculate_error_score(groups, compare_obj) {
+      function calculate_combination_error(groups, compare_obj) {
         let total_error = 0;
         for (let d = 0; d < DAY; d++) {
           let error_for_day = 0;
@@ -251,14 +250,14 @@
               groups[g][d],
               compare_obj
             );
-
-            if (error_for_group < 1)
-              console.warn("Group error < 1", error_for_group);
-            error_for_day += error_for_group * error_for_group;
+            error_for_day += error_for_group;
           }
-          total_error += error_for_day * error_for_day;
+          total_error += error_for_day;
         }
-        return total_error;
+        const R = Math.sqrt(total_error / 10000);
+        mx = Math.max(R, mx);
+        mn = Math.min(R, mn);
+        return R;
       }
 
       /**
@@ -268,15 +267,18 @@
        * @return {number} error score
        */
       function calculate_group_error(groups, compare_obj) {
-        let total_error = 1;
+        let total_error = 0;
         compare_obj.forEach((cmp) => {
+          let error_per_attr = 0;
           for (let i = 0; i < groups.length; i++) {
             for (let j = i + 1; j < groups.length; j++) {
               if (!validate_attr(groups[i], groups[j], cmp.attr)) continue;
-              const error = calculate_error(groups[i], groups[j], cmp);
-              total_error += error * cmp.weight;
+              const error =
+                calculate_error(groups[i], groups[j], cmp) * cmp.weight * 100;
+              error_per_attr += error * error;
             }
           }
+          total_error += error_per_attr;
         });
         return total_error;
       }
@@ -335,7 +337,10 @@
             const group = groups[g][d];
             // check group size
             if (Math.abs(MAX_GROUP_SIZE - group.length) > 1) {
-              console.warn(`Group size not valid: ${group.length}`, group);
+              console.warn(
+                `Group size not valid: expected ${MAX_GROUP_SIZE} += 1, but found ${group.length}`,
+                group
+              );
               return false;
             }
 
