@@ -415,6 +415,5 @@ function modify_control_sheet(wb) {
 
 const randomBtn = document.getElementById("random-btn");
 randomBtn.addEventListener("click", () => {
-  console.log(fileInput.files[0]);
   processForm();
 });
