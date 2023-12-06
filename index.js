@@ -31,11 +31,9 @@ const COMPARE_OBJ = [
 ];
 
 async function processForm() {
-  console.log("File uploaded");
-
   const file_form = document.getElementById("input-file");
   if (!file_form.files.length) {
-    console.log("No file selected");
+    console.warn("No file selected");
     return false;
   }
 
@@ -73,7 +71,6 @@ async function processForm() {
 
   const is_generate_control_sheet = false;
   if (is_generate_control_sheet && !("control" in workbook.Sheets)) {
-    console.log("Creating control sheet");
     modify_control_sheet(workbook);
   }
 
@@ -193,8 +190,8 @@ function sample_group() {
           cat[r][g].leader_round &&
           Math.floor(d / 2) === cat[r][g].leader_round - 1
         ) {
-          if (group_leaders[g][d]) console.warn("Duplicate leader");
-          group_leaders[g][d] = cat[r][g].names;
+          if (group_leaders[group_id - 1][d]) console.warn("Duplicate leader");
+          group_leaders[group_id - 1][d] = cat[r][g].names;
           is_group_leader = true;
         }
         groups[group_id - 1][d].push({ ...cat[r][g], is_group_leader });
