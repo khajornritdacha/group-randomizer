@@ -5,7 +5,8 @@ const DAY = 6;
 let member = 0;
 const ROUND = 3;
 let MAX_GROUP_SIZE = 0;
-const SAMPLE_ROUND = 1;
+// TODO: change this number
+const SAMPLE_ROUND = 100000;
 const data = [];
 const COMPARE_MODE = Object.freeze({
   EXACT: "exact",
@@ -29,6 +30,8 @@ const COMPARE_OBJ = [
     value: [1],
   },
 ];
+
+// TODO: fix group leader
 
 async function processForm() {
   console.log("File uploaded");
@@ -153,12 +156,18 @@ function random_group(compare_obj = []) {
     const { groups, group_for_member, group_leaders } = sample_group();
     if (!validate_group(groups)) continue;
     const err = calculate_combination_error(groups, compare_obj);
+    if (err === -1) continue;
+    console.log(`Error for sample ${i}: ${err}`);
     samples.push({ groups, group_for_member, group_leaders, err });
   }
   const min_err = Math.min(...samples.map((s) => s.err));
   const idx = samples.findIndex((s) => s.err === min_err);
-  if (idx === -1) console.warn("No valid group");
-  else console.log(`Minimum error of group: ${min_err}`);
+  if (idx === -1) {
+    console.warn("No valid group");
+    return [];
+  } else {
+    console.log(`Minimum error of group: ${min_err}`);
+  }
   return samples[idx];
 }
 
@@ -228,6 +237,11 @@ function calculate_combination_error(groups, compare_obj) {
     let error_for_day = 0;
     for (let g = 0; g < GROUP; g++) {
       const error_for_group = calculate_group_error(groups[g][d], compare_obj);
+      if (error_for_group === -1) {
+        console.warn(`Error for group ${g} day ${d} is -1`);
+        return -1;
+      }
+      // console.log(`Error for group ${g} day ${d}: ${error_for_group}`);
       error_for_day += error_for_group;
     }
     total_error += error_for_day;
@@ -244,18 +258,25 @@ function calculate_combination_error(groups, compare_obj) {
  */
 function calculate_group_error(groups, compare_obj) {
   let total_error = 0;
+  const MAX_DUP_CNT = 2;
+  let rejected = false;
   compare_obj.forEach((cmp) => {
     let error_per_attr = 0;
+    let dup_cnt = 0;
     for (let i = 0; i < groups.length; i++) {
       for (let j = i + 1; j < groups.length; j++) {
         if (!validate_attr(groups[i], groups[j], cmp.attr)) continue;
-        const error =
-          calculate_error(groups[i], groups[j], cmp) * cmp.weight * 100;
+        const raw_error = calculate_error(groups[i], groups[j], cmp);
+        const error = raw_error * cmp.weight * 100;
+        dup_cnt += raw_error;
         error_per_attr += error * error;
       }
     }
+    // console.log(`Error for ${cmp.attr}: ${error_per_attr} ${dup_cnt}`);
+    if (dup_cnt > MAX_DUP_CNT) rejected = true;
     total_error += error_per_attr;
   });
+  if (rejected) return -1;
   return total_error;
 }
 
