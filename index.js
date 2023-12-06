@@ -6,7 +6,7 @@ let member = 0;
 const ROUND = 3;
 let MAX_GROUP_SIZE = 0;
 // TODO: change this number
-const SAMPLE_ROUND = 100000;
+const SAMPLE_ROUND = 10000;
 const data = [];
 const COMPARE_MODE = Object.freeze({
   EXACT: "exact",
@@ -27,11 +27,9 @@ const COMPARE_OBJ = [
     mode: COMPARE_MODE.EXACT_SOME,
     attr: "ex_camp",
     weight: 0.5,
-    value: [1],
+    value: ["1"],
   },
 ];
-
-// TODO: fix group leader
 
 async function processForm() {
   const file_form = document.getElementById("input-file");
@@ -78,7 +76,6 @@ async function processForm() {
   }
 
   xlsx.writeFile(out_wb, "output.xlsx");
-  reset();
 }
 
 function reset() {
@@ -154,7 +151,7 @@ function random_group(compare_obj = []) {
     if (!validate_group(groups)) continue;
     const err = calculate_combination_error(groups, compare_obj);
     if (err === -1) continue;
-    console.log(`Error for sample ${i}: ${err}`);
+    // console.log(`Error for sample ${i}: ${err}`);
     samples.push({ groups, group_for_member, group_leaders, err });
   }
   const min_err = Math.min(...samples.map((s) => s.err));
@@ -235,7 +232,7 @@ function calculate_combination_error(groups, compare_obj) {
     for (let g = 0; g < GROUP; g++) {
       const error_for_group = calculate_group_error(groups[g][d], compare_obj);
       if (error_for_group === -1) {
-        console.warn(`Error for group ${g} day ${d} is -1`);
+        // console.warn(`Error for group ${g} day ${d} is -1`);
         return -1;
       }
       // console.log(`Error for group ${g} day ${d}: ${error_for_group}`);
@@ -310,7 +307,8 @@ function calculate_error(m1, m2, cmp) {
       if (m1[cmp.attr] === m2[cmp.attr]) error++;
       break;
     case COMPARE_MODE.EXACT_SOME:
-      if (m1[cmp.attr] === m2[cmp.attr] && m1[cmp.attr] in cmp.value) error++;
+      if (m1[cmp.attr] === m2[cmp.attr] && cmp.value.includes(m1[cmp.attr]))
+        error++;
       break;
     default:
       console.warn(`Compare mode ${mode} not found`);
@@ -439,4 +437,5 @@ function modify_control_sheet(wb) {
 const randomBtn = document.getElementById("random-btn");
 randomBtn.addEventListener("click", () => {
   processForm();
+  reset();
 });
