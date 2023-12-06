@@ -6,7 +6,7 @@ let member = 0;
 const ROUND = 3;
 let MAX_GROUP_SIZE = 0;
 // TODO: change this number
-const SAMPLE_ROUND = 10000;
+const SAMPLE_ROUND = 100000;
 const data = [];
 const COMPARE_MODE = Object.freeze({
   EXACT: "exact",
@@ -27,7 +27,7 @@ const COMPARE_OBJ = [
     mode: COMPARE_MODE.EXACT_SOME,
     attr: "ex_camp",
     weight: 0.5,
-    value: ["1"],
+    value: [1],
   },
 ];
 
@@ -58,6 +58,9 @@ async function processForm() {
     member++;
   }
   MAX_GROUP_SIZE = Math.ceil(member / GROUP);
+  // console.log(data);
+  // console.log(typeof data[0].ex_camp);
+  // console.log(`Includes: ${COMPARE_OBJ[2]?.value.includes(data[0].ex_camp)}`);
 
   // Insert database sheet
   const out_wb = xlsx.utils.book_new();
