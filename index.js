@@ -6,7 +6,7 @@ let member = 0;
 const ROUND = 3;
 let MAX_GROUP_SIZE = 0;
 // TODO: change this number
-const SAMPLE_ROUND = 100000;
+const SAMPLE_ROUND = 10000;
 const data = [];
 const COMPARE_MODE = Object.freeze({
   EXACT: "exact",
@@ -234,16 +234,18 @@ function calculate_combination_error(groups, compare_obj) {
     let error_for_day = 0;
     for (let g = 0; g < GROUP; g++) {
       const error_for_group = calculate_group_error(groups[g][d], compare_obj);
-      if (error_for_group === -1) {
-        // console.warn(`Error for group ${g} day ${d} is -1`);
-        return -1;
-      }
-      // console.log(`Error for group ${g} day ${d}: ${error_for_group}`);
       error_for_day += error_for_group;
+      // if (error_for_group === -1) {
+      //   // console.warn(`Error for group ${g} day ${d} is -1`);
+      //   return -1;
+      // }
+      // // console.log(`Error for group ${g} day ${d}: ${error_for_group}`);
+      // error_for_day += error_for_group;
     }
     total_error += error_for_day;
   }
-  const R = Math.sqrt(total_error / 10000);
+  const R = total_error;
+  // const R = Math.sqrt(total_error / 10000);
   return R;
 }
 
@@ -270,10 +272,11 @@ function calculate_group_error(groups, compare_obj) {
       }
     }
     // console.log(`Error for ${cmp.attr}: ${error_per_attr} ${dup_cnt}`);
-    if (dup_cnt > MAX_DUP_CNT) rejected = true;
-    total_error += error_per_attr;
+    if (dup_cnt > MAX_DUP_CNT) total_error += 1;
+    // total_error += error_per_attr;
   });
-  if (rejected) return -1;
+  // TODO: fix this functino
+  // if (rejected) return -1;
   return total_error;
 }
 
