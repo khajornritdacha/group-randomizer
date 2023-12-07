@@ -6,7 +6,7 @@ let member = 0;
 const ROUND = 3;
 let MAX_GROUP_SIZE = 0;
 // TODO: change this number
-const SAMPLE_ROUND = 10000;
+const SAMPLE_ROUND = 1;
 const data = [];
 const COMPARE_MODE = Object.freeze({
   EXACT: "exact",
@@ -58,9 +58,6 @@ async function processForm() {
     member++;
   }
   MAX_GROUP_SIZE = Math.ceil(member / GROUP);
-  // console.log(data);
-  // console.log(typeof data[0].ex_camp);
-  // console.log(`Includes: ${COMPARE_OBJ[2]?.value.includes(data[0].ex_camp)}`);
 
   // Insert database sheet
   const out_wb = xlsx.utils.book_new();
@@ -154,7 +151,6 @@ function random_group(compare_obj = []) {
     if (!validate_group(groups)) continue;
     const err = calculate_combination_error(groups, compare_obj);
     if (err === -1) continue;
-    // console.log(`Error for sample ${i}: ${err}`);
     samples.push({ groups, group_for_member, group_leaders, err });
   }
   const min_err = Math.min(...samples.map((s) => s.err));
@@ -176,6 +172,15 @@ function random_group(compare_obj = []) {
  * @returns {{groups: Object[][], group_for_member: number[][], group_leaders: string[][]}}
  */
 function sample_group() {
+  const { groups, group_for_member, group_leaders } = sample_by_baan();
+  return {
+    groups,
+    group_for_member,
+    group_leaders,
+  };
+}
+
+function generate_blank_group() {
   const group_for_member = Array.from({ length: member }, (_, i) => []);
   shuffle(data);
   const group_leaders = Array.from({ length: GROUP }, (_, i) =>
@@ -184,6 +189,81 @@ function sample_group() {
   const groups = Array.from({ length: GROUP }, (_, i) =>
     Array.from({ length: DAY }, (_, i) => [])
   );
+  return {
+    groups,
+    group_for_member,
+    group_leaders,
+  };
+}
+
+/**
+ * Sample groups distribution by ex_camp and baan (This will not properly assign group leader)
+ * @returns {{groups: Object[][], group_for_member: number[][], group_leaders: string[][]}}
+ */
+function sample_by_baan() {
+  const { group_for_member, group_leaders, groups } = generate_blank_group();
+  // group people by ex-camp then baan
+  const cat = {};
+  data.forEach((d, i) => {
+    if (!(d.ex_camp in cat)) {
+      cat[d.ex_camp] = {};
+    }
+    if (!(d.baan in cat[d.ex_camp])) {
+      cat[d.ex_camp][d.baan] = [];
+    }
+    console.log(d);
+    cat[d.ex_camp][d.baan].push(d);
+  });
+  // shuffle each group
+  Object.keys(cat).forEach((ex_camp) => {
+    Object.keys(cat[ex_camp]).forEach((baan) => {
+      shuffle(cat[ex_camp][baan]);
+    });
+  });
+
+  // assign group
+  let g = 0;
+  let ith_person = 0;
+  for (let ex_camp in cat) {
+    for (let baan in cat[ex_camp]) {
+      for (let person of cat[ex_camp][baan]) {
+        for (let d = 0; d < DAY; d++) {
+          const group_id = calculate_group_id(g, ith_person, d);
+          const is_group_leader = ith_person === 0;
+          groups[group_id - 1][d].push({
+            ...person,
+            is_group_leader,
+          });
+          group_for_member[person.id - 1].push(group_id);
+          if (is_group_leader) group_leaders[group_id - 1][d] = person.names;
+        }
+        g++;
+        if (g === GROUP) {
+          g = 0;
+          ith_person++;
+        }
+      }
+    }
+  }
+
+  return {
+    groups,
+    group_for_member,
+    group_leaders,
+  };
+}
+
+/**
+ * Sample group by fixing group leader
+ * @param {Object[][]} cat
+ * @param {Object[][][]} groups
+ * @param {Object[][]} group_for_member
+ * @param {string[][]} group_leaders
+ * @returns
+ */
+
+function sample_by_group_leader() {
+  const { group_for_member, group_leaders, groups } = generate_blank_group();
   const cat = Array.from({ length: ROUND + 1 }, (_, i) => []);
   data.forEach((d, i) => {
     const leader_round = d.leader_round;
@@ -235,17 +315,10 @@ function calculate_combination_error(groups, compare_obj) {
     for (let g = 0; g < GROUP; g++) {
       const error_for_group = calculate_group_error(groups[g][d], compare_obj);
       error_for_day += error_for_group;
-      // if (error_for_group === -1) {
-      //   // console.warn(`Error for group ${g} day ${d} is -1`);
-      //   return -1;
-      // }
-      // // console.log(`Error for group ${g} day ${d}: ${error_for_group}`);
-      // error_for_day += error_for_group;
     }
     total_error += error_for_day;
   }
   const R = total_error;
-  // const R = Math.sqrt(total_error / 10000);
   return R;
 }
 
@@ -258,25 +331,17 @@ function calculate_combination_error(groups, compare_obj) {
 function calculate_group_error(groups, compare_obj) {
   let total_error = 0;
   const MAX_DUP_CNT = 2;
-  let rejected = false;
   compare_obj.forEach((cmp) => {
-    let error_per_attr = 0;
     let dup_cnt = 0;
     for (let i = 0; i < groups.length; i++) {
       for (let j = i + 1; j < groups.length; j++) {
         if (!validate_attr(groups[i], groups[j], cmp.attr)) continue;
         const raw_error = calculate_error(groups[i], groups[j], cmp);
-        const error = raw_error * cmp.weight * 100;
         dup_cnt += raw_error;
-        error_per_attr += error * error;
       }
     }
-    // console.log(`Error for ${cmp.attr}: ${error_per_attr} ${dup_cnt}`);
     if (dup_cnt > MAX_DUP_CNT) total_error += 1;
-    // total_error += error_per_attr;
   });
-  // TODO: fix this functino
-  // if (rejected) return -1;
   return total_error;
 }
 
