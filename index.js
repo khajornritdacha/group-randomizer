@@ -6,7 +6,7 @@ let member = 0;
 const ROUND = 3;
 let MAX_GROUP_SIZE = 0;
 // TODO: change this number
-const SAMPLE_ROUND = 1;
+const SAMPLE_ROUND = 10000;
 const data = [];
 const COMPARE_MODE = Object.freeze({
   EXACT: "exact",
