@@ -172,7 +172,7 @@ function random_group(compare_obj = []) {
  * @returns {{groups: Object[][], group_for_member: number[][], group_leaders: string[][]}}
  */
 function sample_group() {
-  const { groups, group_for_member, group_leaders } = sample_by_baan();
+  const { groups, group_for_member, group_leaders } = sample_by_group_leader();
   return {
     groups,
     group_for_member,
