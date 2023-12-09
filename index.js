@@ -6,29 +6,40 @@ let member = 0;
 const ROUND = 3;
 let MAX_GROUP_SIZE = 0;
 // TODO: change this number
-const SAMPLE_ROUND = 1;
+const SAMPLE_ROUND = 1000;
 const data = [];
 const COMPARE_MODE = Object.freeze({
   EXACT: "exact",
   EXACT_SOME: "exact_some",
 });
 const COMPARE_OBJ = [
-  {
-    mode: COMPARE_MODE.EXACT,
-    attr: "roles",
-    weight: 0.3,
-  },
-  {
-    mode: COMPARE_MODE.EXACT,
-    attr: "baan",
-    weight: 0.2,
-  },
+  // {
+  //   mode: COMPARE_MODE.EXACT,
+  //   attr: "roles",
+  //   weight: 0.3,
+  // },
+  // {
+  //   mode: COMPARE_MODE.EXACT,
+  //   attr: "baan",
+  //   weight: 0.2,
+  // },
   {
     mode: COMPARE_MODE.EXACT_SOME,
     attr: "ex_camp",
     weight: 0.5,
     value: [1],
   },
+];
+
+const RELATION = [
+  ["เจได", "มายด์", "เดือน"],
+  ["อี๊ด", "โอ๊ค", "ตี่"],
+  ["พี", "ตาล"],
+  ["เจ", "วิน"],
+  ["หุ้น", "มู่หลาน"],
+  ["คิม", "พลอย"],
+  ["เติ้ล", "เพชร"],
+  ["พริม", "แป้งจี่"],
 ];
 
 async function processForm() {
@@ -52,7 +63,7 @@ async function processForm() {
       roles: workbook.Sheets["database"][`D${i}`].v,
       baan: workbook.Sheets["database"][`E${i}`].v,
       ex_camp: workbook.Sheets["database"][`F${i}`].v,
-      sex: workbook.Sheets["database"][`G${i}`].v,
+      gender: workbook.Sheets["database"][`G${i}`].v,
       id: i - 1,
       leader_round: workbook.Sheets["database"][`J${i}`]?.v,
     });
@@ -147,10 +158,13 @@ function create_group_leader_sheet(wb) {
  */
 function random_group(compare_obj = []) {
   const samples = [];
+  const options = {
+    check_contain_all_gender: true,
+  };
   for (let i = 0; i < SAMPLE_ROUND; i++) {
     const { groups, group_for_member, group_leaders } = sample_group();
     if (!validate_group(groups)) continue;
-    const err = calculate_combination_error(groups, compare_obj);
+    const err = calculate_combination_error(groups, compare_obj, options);
     if (err === -1) continue;
     samples.push({ groups, group_for_member, group_leaders, err });
   }
@@ -197,24 +211,16 @@ function generate_blank_group() {
   };
 }
 
-const RELATION = [
-  ["เจได", "มายด์", "เดือน"],
-  ["อี๊ด", "โอ๊ค", "ตี่"],
-  ["พี", "ตาล"],
-  ["เจ", "วิน"],
-  ["หุ้น", "มู่หลาน"],
-  ["คิม", "พลอย"],
-  ["เติ้ล", "เพชร"],
-  ["พริม", "แป้งจี่"],
-];
-
-// TODO: ensure all group has male and female
+/**
+ * Sample groups by closeness of given pairs of member
+ * @returns {{groups: Object[][], group_for_member: number[][], group_leaders: string[][]}}
+ */
 function sample_by_relation() {
   const { group_for_member, group_leaders, groups } = generate_blank_group();
   let g = 0;
   let new_data = data.map((d) => ({ ...d, rand: Math.random() }));
   let cat = Array.from({ length: GROUP }, (_, i) => []);
-  // Fill group of day0th with random person
+  // Fill group of 0th-day with random person
   for (let i = 0; i < RELATION.length; i++, g++) {
     if (g == GROUP) g = 0;
     new_data
@@ -226,9 +232,8 @@ function sample_by_relation() {
   }
   ensure_group_has_male(cat, new_data);
 
-  // sort by sex, then rand
+  // sort by gender, then rand
   cat = sort_by_sex_rand(cat);
-  console.log(cat);
 
   // assign group to each day
   for (let g = 0; g < GROUP; g++) {
@@ -253,10 +258,10 @@ function sample_by_relation() {
 function sort_by_sex_rand(cat) {
   for (let i = 0; i < cat.length; i++) {
     cat[i].sort((a, b) => {
-      if (a.sex === b.sex) {
+      if (a.gender === b.gender) {
         return a.rand < b.rand ? -1 : 1;
       }
-      return a.sex < b.sex ? -1 : 1;
+      return a.gender < b.gender ? -1 : 1;
     });
   }
   return cat;
@@ -270,7 +275,7 @@ function sort_by_sex_rand(cat) {
 function ensure_group_has_male(cat, new_data) {
   for (let i = 0; i < cat.length; i++) {
     const male = cat[i].reduce((acc, cur) => {
-      return acc + (cur.sex === 1);
+      return acc + (cur.gender === 1);
     }, 0);
     if (male === 0) {
       // randomly pick male from new_data
@@ -294,9 +299,6 @@ function ensure_group_has_male(cat, new_data) {
       all_max_size = 0;
     }
   }
-  console.log(
-    `End ensure_group_has_male, new_data has length: ${new_data.length}`
-  );
 }
 
 function random_insert(cat, new_data, i) {
@@ -308,7 +310,7 @@ function random_insert(cat, new_data, i) {
 }
 
 function insert_male(cat, new_data, i) {
-  const maleCandidates = new_data.filter((d) => d.sex === 1);
+  const maleCandidates = new_data.filter((d) => d.gender === 1);
   const randomIndex = Math.floor(Math.random() * maleCandidates.length);
   const randomMale = maleCandidates[randomIndex];
   cat[i].push(randomMale);
@@ -331,7 +333,6 @@ function sample_by_baan() {
     if (!(d.baan in cat[d.ex_camp])) {
       cat[d.ex_camp][d.baan] = [];
     }
-    console.log(d);
     cat[d.ex_camp][d.baan].push(d);
   });
   // shuffle each group
@@ -448,6 +449,11 @@ function calculate_combination_error(groups, compare_obj, options = {}) {
   return total_error;
 }
 
+function check_contain_all_gender(group) {
+  const ss = new Set(group.map((d) => d.gender));
+  return ss.size === 2;
+}
+
 /**
  * Calculate error score for a group
  * @param {Object[]} groups
@@ -457,6 +463,7 @@ function calculate_combination_error(groups, compare_obj, options = {}) {
 function calculate_group_error(groups, compare_obj) {
   let total_error = 0;
   const MAX_DUP_CNT = 2;
+  const FACTOR = 2;
   compare_obj.forEach((cmp) => {
     let dup_cnt = 0;
     for (let i = 0; i < groups.length; i++) {
@@ -466,7 +473,8 @@ function calculate_group_error(groups, compare_obj) {
         dup_cnt += raw_error;
       }
     }
-    if (dup_cnt > MAX_DUP_CNT) total_error += 1;
+    // if dup_cnt exceed MAX_DUP_CNT, then its cost is 2*(dup_cnt-MAX_DUP_CNT)
+    if (dup_cnt > MAX_DUP_CNT) total_error += FACTOR * (dup_cnt - MAX_DUP_CNT);
   });
   return total_error;
 }
