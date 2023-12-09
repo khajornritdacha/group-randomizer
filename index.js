@@ -6,7 +6,7 @@ let member = 0;
 const ROUND = 3;
 let MAX_GROUP_SIZE = 0;
 // TODO: change this number
-const SAMPLE_ROUND = 10000;
+const SAMPLE_ROUND = 1;
 const data = [];
 const COMPARE_MODE = Object.freeze({
   EXACT: "exact",
@@ -52,6 +52,7 @@ async function processForm() {
       roles: workbook.Sheets["database"][`D${i}`].v,
       baan: workbook.Sheets["database"][`E${i}`].v,
       ex_camp: workbook.Sheets["database"][`F${i}`].v,
+      sex: workbook.Sheets["database"][`G${i}`].v,
       id: i - 1,
       leader_round: workbook.Sheets["database"][`J${i}`]?.v,
     });
@@ -172,7 +173,7 @@ function random_group(compare_obj = []) {
  * @returns {{groups: Object[][], group_for_member: number[][], group_leaders: string[][]}}
  */
 function sample_group() {
-  const { groups, group_for_member, group_leaders } = sample_by_group_leader();
+  const { groups, group_for_member, group_leaders } = sample_by_relation();
   return {
     groups,
     group_for_member,
@@ -194,6 +195,125 @@ function generate_blank_group() {
     group_for_member,
     group_leaders,
   };
+}
+
+const RELATION = [
+  ["เจได", "มายด์", "เดือน"],
+  ["อี๊ด", "โอ๊ค", "ตี่"],
+  ["พี", "ตาล"],
+  ["เจ", "วิน"],
+  ["หุ้น", "มู่หลาน"],
+  ["คิม", "พลอย"],
+  ["เติ้ล", "เพชร"],
+  ["พริม", "แป้งจี่"],
+];
+
+// TODO: ensure all group has male and female
+function sample_by_relation() {
+  const { group_for_member, group_leaders, groups } = generate_blank_group();
+  let g = 0;
+  let new_data = data.map((d) => ({ ...d, rand: Math.random() }));
+  let cat = Array.from({ length: GROUP }, (_, i) => []);
+  // Fill group of day0th with random person
+  for (let i = 0; i < RELATION.length; i++, g++) {
+    if (g == GROUP) g = 0;
+    new_data
+      .filter((d) => RELATION[i].includes(d.names))
+      .forEach((d) => {
+        cat[g].push(d);
+        new_data = new_data.filter((new_d) => d.id !== new_d.id);
+      });
+  }
+  ensure_group_has_male(cat, new_data);
+
+  // sort by sex, then rand
+  cat = sort_by_sex_rand(cat);
+  console.log(cat);
+
+  // assign group to each day
+  for (let g = 0; g < GROUP; g++) {
+    cat[g].forEach((person, idx) => {
+      for (let day = 0; day < DAY; day++) {
+        // increase day by 1
+        const group_id = calculate_group_id(g, idx, day + 1);
+        groups[group_id - 1][day].push(person);
+        group_for_member[person.id - 1].push(group_id);
+        if (idx === 0) group_leaders[group_id - 1][day] = person.names;
+      }
+    });
+  }
+
+  return {
+    groups,
+    group_for_member,
+    group_leaders,
+  };
+}
+
+function sort_by_sex_rand(cat) {
+  for (let i = 0; i < cat.length; i++) {
+    cat[i].sort((a, b) => {
+      if (a.sex === b.sex) {
+        return a.rand < b.rand ? -1 : 1;
+      }
+      return a.sex < b.sex ? -1 : 1;
+    });
+  }
+  return cat;
+}
+
+/**
+ *
+ * @param {Object[][]} cat
+ * @param {Object[]} new_data
+ */
+function ensure_group_has_male(cat, new_data) {
+  for (let i = 0; i < cat.length; i++) {
+    const male = cat[i].reduce((acc, cur) => {
+      return acc + (cur.sex === 1);
+    }, 0);
+    if (male === 0) {
+      // randomly pick male from new_data
+      new_data = insert_male(cat, new_data, i);
+    }
+  }
+
+  let i = 0;
+  let all_max_size = 0;
+  while (new_data.length) {
+    if (cat[i].length < MAX_GROUP_SIZE)
+      new_data = random_insert(cat, new_data, i);
+    else all_max_size++;
+    i++;
+    if (i === cat.length) {
+      i = 0;
+      if (all_max_size === cat.length) {
+        console.warn("Cannot insert all member");
+        break;
+      }
+      all_max_size = 0;
+    }
+  }
+  console.log(
+    `End ensure_group_has_male, new_data has length: ${new_data.length}`
+  );
+}
+
+function random_insert(cat, new_data, i) {
+  const randomIndex = Math.floor(Math.random() * new_data.length);
+  const randomPerson = new_data[randomIndex];
+  cat[i].push(randomPerson);
+  new_data = new_data.filter((d) => d.id !== randomPerson.id);
+  return new_data;
+}
+
+function insert_male(cat, new_data, i) {
+  const maleCandidates = new_data.filter((d) => d.sex === 1);
+  const randomIndex = Math.floor(Math.random() * maleCandidates.length);
+  const randomMale = maleCandidates[randomIndex];
+  cat[i].push(randomMale);
+  new_data = new_data.filter((d) => d.id !== randomMale.id);
+  return new_data;
 }
 
 /**
@@ -308,18 +428,24 @@ function sample_by_group_leader() {
  * @param {Object[]} compare_obj Array of compare object with mode and attr and (optional) value
  * @return {number} error score
  */
-function calculate_combination_error(groups, compare_obj) {
+function calculate_combination_error(groups, compare_obj, options = {}) {
   let total_error = 0;
+  const GENDER_ERROR = 100;
   for (let d = 0; d < DAY; d++) {
     let error_for_day = 0;
     for (let g = 0; g < GROUP; g++) {
       const error_for_group = calculate_group_error(groups[g][d], compare_obj);
       error_for_day += error_for_group;
+      if (
+        options?.contain_all_gender &&
+        !check_contain_all_gender(groups[g][d])
+      ) {
+        total_error += GENDER_ERROR;
+      }
     }
     total_error += error_for_day;
   }
-  const R = total_error;
-  return R;
+  return total_error;
 }
 
 /**
