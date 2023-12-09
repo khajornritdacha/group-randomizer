@@ -393,7 +393,7 @@ function calculate_error(m1, m2, cmp) {
  * @param {Object[][]} groups
  * @returns {boolean}
  */
-function validate_group(groups) {
+function validate_group(groups, options = {}) {
   for (let g = 0; g < GROUP; g++) {
     for (let d = 0; d < DAY; d++) {
       const group = groups[g][d];
@@ -408,7 +408,7 @@ function validate_group(groups) {
 
       // check group leader
       const group_leader = group.filter((m) => m.is_group_leader);
-      if (group_leader.length !== 1) {
+      if (options?.check_group_leader && group_leader.length !== 1) {
         console.warn(`Group leader not valid: ${group_leader.length}`, group);
         return false;
       }
