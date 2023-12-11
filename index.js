@@ -13,16 +13,16 @@ const COMPARE_MODE = Object.freeze({
   EXACT_SOME: "exact_some",
 });
 const COMPARE_OBJ = [
-  // {
-  //   mode: COMPARE_MODE.EXACT,
-  //   attr: "roles",
-  //   weight: 0.3,
-  // },
-  // {
-  //   mode: COMPARE_MODE.EXACT,
-  //   attr: "baan",
-  //   weight: 0.2,
-  // },
+  {
+    mode: COMPARE_MODE.EXACT,
+    attr: "roles",
+    weight: 0.3,
+  },
+  {
+    mode: COMPARE_MODE.EXACT,
+    attr: "baan",
+    weight: 0.2,
+  },
   {
     mode: COMPARE_MODE.EXACT_SOME,
     attr: "ex_camp",
@@ -32,7 +32,7 @@ const COMPARE_OBJ = [
 ];
 
 const RELATION = [
-  ["เจได", "มายด์", "เดือน"],
+  ["เจได", "ทิว", "เดือน"],
   ["อี๊ด", "โอ๊ค", "ตี่"],
   ["พี", "ตาล"],
   ["เจ", "วิน"],
