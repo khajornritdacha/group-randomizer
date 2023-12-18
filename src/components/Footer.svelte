@@ -1,0 +1,1 @@
+<footer class="bg-purple-500/50  0 mt-10 py-5 text-center text-2xl font-bold content-end">Powered by J. & JomnoiZ</footer>
