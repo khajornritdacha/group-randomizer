@@ -1,9 +1,11 @@
 <script lang="ts">
 	import { data } from '../store';
 
-	export let group_cnt = 0;
-	export let day = 1;
+	export let group_cnt: number;
+	export let day: number;
 	const PRIMES = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29];
+
+	$: console.log(`group_cnt in children= ${group_cnt}`);
 </script>
 
 <div class="flex flex-col pt-10 justify-center">

@@ -1,25 +1,27 @@
 <script lang="ts">
-	import DownloadButton from "../components/DownloadButton.svelte";
-	import DropMember from "../components/DropMember.svelte";
-	import Footer from "../components/Footer.svelte";
-	import ForbiddenPair from "../components/ForbiddenPair.svelte";
-	import GroupInformation from "../components/GroupInformation.svelte";
-    // import Modal from 'svelte-parts/Modal.svelte';
+	import DownloadButton from '../components/DownloadButton.svelte';
+	import DropMember from '../components/DropMember.svelte';
+	import Footer from '../components/Footer.svelte';
+	import ForbiddenPair from '../components/ForbiddenPair.svelte';
+	import GroupInformation from '../components/GroupInformation.svelte';
+	// import Modal from 'svelte-parts/Modal.svelte';
 
-    let group_cnt = 0;
-    let day = 1;
+	let group_cnt = 0;
+	let day = 1;
+
+	$: console.log(`group_cnt = ${group_cnt}`);
 </script>
 
 <h1 class="font-bold text-7xl text-center py-10 text-indigo-950">Group Randomizer</h1>
 <div class="flex flex-row">
-    <div class="basis-1/2 m-5 flex flex-col items-center">
-        <DropMember />
-        <GroupInformation group_cnt={group_cnt} day={day}/>
-    </div>
-    <div class="basis-1/2 m-5 flex flex-col items-center">
-        <DownloadButton />
-        <ForbiddenPair />
-    </div>
+	<div class="basis-1/2 m-5 flex flex-col items-center">
+		<DropMember />
+		<GroupInformation bind:group_cnt bind:day />
+	</div>
+	<div class="basis-1/2 m-5 flex flex-col items-center">
+		<DownloadButton />
+		<ForbiddenPair />
+	</div>
 </div>
 
 <!-- TODO: let me learn about $: first, and I will go back to create modal -->
