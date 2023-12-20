@@ -4,14 +4,17 @@
 	import Footer from "../components/Footer.svelte";
 	import ForbiddenPair from "../components/ForbiddenPair.svelte";
 	import GroupInformation from "../components/GroupInformation.svelte";
-    import Modal from 'svelte-parts/Modal.svelte';
+    // import Modal from 'svelte-parts/Modal.svelte';
+
+    let group_cnt = 0;
+    let day = 1;
 </script>
 
 <h1 class="font-bold text-7xl text-center py-10 text-indigo-950">Group Randomizer</h1>
 <div class="flex flex-row">
     <div class="basis-1/2 m-5 flex flex-col items-center">
         <DropMember />
-        <GroupInformation />
+        <GroupInformation group_cnt={group_cnt} day={day}/>
     </div>
     <div class="basis-1/2 m-5 flex flex-col items-center">
         <DownloadButton />
