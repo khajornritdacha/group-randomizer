@@ -1,5 +1,6 @@
 import type { Person } from '../types';
 
+// TODO: force men to be 1-st index and women to 2-nd index in every basis group to ensure every group has all genders
 export class GroupService {
 	readonly data: Person[];
 	readonly forbiddenPairs: string[][];
@@ -10,6 +11,7 @@ export class GroupService {
 	leftMaxGroupSize: number; // Count number of groups that can have maximum group size
 
 	constructor(data: Person[], forbiddenPairs: string[][], DAY: number, TOTAL_GROUP: number) {
+		shuffle(data);
 		this.data = data;
 		this.forbiddenPairs = forbiddenPairs;
 		this.DAY = DAY;
@@ -21,7 +23,6 @@ export class GroupService {
 	}
 
 	randomGroup() {
-		// TODO: shuffle data?
 		const basis = this.generateBasisGroup();
 
 		const groups = Array.from({ length: this.TOTAL_GROUP }, () =>
@@ -36,7 +37,7 @@ export class GroupService {
 			basis[g].forEach((person, idx) => {
 				for (let d = 0; d < this.DAY; d++) {
 					// increase actual DAY by 1
-					const group_id = this.calculateGroupId(g, idx, this.DAY + 1);
+					const group_id = this.calculateGroupId(g, idx, d + 1);
 					groups[group_id - 1][d].push(person);
 					groupOfMembers[person.id - 1][d] = group_id;
 				}
@@ -50,7 +51,6 @@ export class GroupService {
 	}
 
 	generateBasisGroup(): Person[][] {
-		// TODO: implement
 		this.newData = this.data.map((person: Person) => ({ ...person, rand: Math.random() }));
 		const basis = Array.from({ length: this.TOTAL_GROUP }, () => []) as Person[][];
 
@@ -73,6 +73,7 @@ export class GroupService {
 			while (this.checkInsertSize(1, basis[g])) {
 				const person = this.getRandomPerson();
 				basis[g].push(person);
+				this.newData = this.newData.filter((p) => p.id !== person.id);
 			}
 		}
 	}
@@ -150,10 +151,6 @@ export class GroupService {
 		return false;
 	}
 
-	checkInsertGender(values: Person[], group: Person[]) {
-		// TODO: check gender before insert
-	}
-
 	countGender(group: Person[]) {
 		return group.reduce(
 			(agg, person) => {
@@ -181,24 +178,107 @@ export class GroupService {
 		if (round === 0) round = this.MAX_GROUP_SIZE;
 		return ((base_group + round * day) % this.TOTAL_GROUP) + 1;
 	}
+
+	getGroupError(groups: Person[][][]) {
+		// TODO: validate group by the following conditions:
+		// 1. Every group must have at least 1 male and 1 female
+		// 2. Number of people in a group must be in range [MAX_GROUP_SIZE - 1, MAX_GROUP_SIZE]
+		// 3. No pair of member in a group meet twice
+		const errors: string[] = [];
+		this.getGenderError(errors, groups);
+		this.getMeetError(errors, groups);
+		this.getSizeError(errors, groups);
+		this.getForbiddenPairError(errors, groups);
+		return errors;
+	}
+
+	getGenderError(errors: string[], groups: Person[][][]) {
+		for (let g = 0; g < groups.length; g++) {
+			for (let d = 0; d < groups[g].length; d++) {
+				const gender_cnt = this.countGender(groups[g][d]);
+				for (const gender in gender_cnt) {
+					if (gender_cnt[gender] === 0) {
+						errors.push(`Some group do not have all gender, group ${g + 1} day ${d + 1}`);
+						return;
+					}
+				}
+			}
+		}
+	}
+
+	getMeetError(errors: string[], groups: Person[][][]) {
+		const meet_cnt = Array.from({ length: this.data.length }, () =>
+			Array.from({ length: this.data.length }, () => 0)
+		);
+		for (let g = 0; g < groups.length; g++) {
+			for (let d = 0; d < groups[g].length; d++) {
+				for (let i = 0; i < groups[g][d].length; i++) {
+					for (let j = i + 1; j < groups[g][d].length; j++) {
+						meet_cnt[groups[g][d][i].id - 1][groups[g][d][j].id - 1]++;
+						meet_cnt[groups[g][d][j].id - 1][groups[g][d][i].id - 1]++;
+						if (meet_cnt[groups[g][d][i].id - 1][groups[g][d][j].id - 1] > 1) {
+							errors.push(
+								`Some group meet twice: ${groups[g][d][i].name} and ${groups[g][d][j].name}`
+							);
+							return;
+						}
+					}
+				}
+			}
+		}
+	}
+
+	getSizeError(errors: string[], groups: Person[][][]) {
+		for (let g = 0; g < groups.length; g++) {
+			for (let d = 0; d < groups[g].length; d++) {
+				if (
+					groups[g][d].length < this.MAX_GROUP_SIZE - 1 ||
+					groups[g][d].length > this.MAX_GROUP_SIZE
+				) {
+					errors.push(`Some group is too small`);
+					return;
+				}
+			}
+		}
+	}
+
+	getForbiddenPairError(errors: string[], groups: Person[][][]) {
+		for (let g = 0; g < groups.length; g++) {
+			for (let d = 0; d < groups[g].length; d++) {
+				for (let i = 0; i < groups[g][d].length; i++) {
+					for (let j = i + 1; j < groups[g][d].length; j++) {
+						if (this.isForbiddenPair(groups[g][d][i], groups[g][d][j])) {
+							errors.push(`Some group has forbidden pair`);
+							return;
+						}
+					}
+				}
+			}
+		}
+	}
+
+	isForbiddenPair(person1: Person, person2: Person) {
+		return this.forbiddenPairs.some((pair) => {
+			const idx1 = pair.indexOf(person1.name);
+			const idx2 = pair.indexOf(person2.name);
+			return idx1 !== -1 && idx2 !== -1 && Math.abs(idx1 - idx2) === 1;
+		});
+	}
 }
 
-export function getGroupError(groups: Person[][][]) {
-	// TODO: validate group by the following conditions:
-	// 1. Every group must have at least 1 male and 1 female
-	// 2. Number of people in a group must be in range [MAX_GROUP_SIZE - 1, MAX_GROUP_SIZE]
-	// 3. No pair of member in a group meet twice
-	return undefined;
-}
+function shuffle(array: unknown[]) {
+	let currentIndex = array.length,
+		randomIndex;
 
-function getGenderError() {
-	return undefined;
-}
+	// While there remain elements to shuffle.
+	while (currentIndex > 0) {
+		// Pick a remaining element.
+		randomIndex = Math.floor(Math.random() * currentIndex);
+		currentIndex--;
 
-function getMeetError() {
-	return undefined;
-}
+		// And swap it with the current element.
+		[array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+	}
 
-function getSizeError() {
-	return undefined;
+	return array;
 }

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { getGroupError, GroupService } from '$lib/utils/groupService';
+	import { GroupService } from '$lib/utils/groupService';
 	import { handleDownload } from '$lib/utils/sheetService';
 	import { data_store, workbook_store } from '../store';
 	import DownloadButton from './DownloadButton.svelte';
@@ -52,22 +52,21 @@
 	}
 
 	function handleDownloadButton() {
-		// TODO: complete this function
-		const groupRandomizer = new GroupService($data_store, forbiddenPairs, day, group_cnt);
-		const { groups, groupOfMembers } = groupRandomizer.randomGroup();
-		const errors = getGroupError(groups) as string[] | undefined;
-
+		const groupService = new GroupService($data_store, forbiddenPairs, day, group_cnt);
+		const { groups, groupOfMembers } = groupService.randomGroup();
+		const errors = groupService.getGroupError(groups) as string[] | undefined;
 		if (errors && errors.length > 0) {
+			console.warn(errors);
+			// TODO: handle show modal
 			showModal(errors || []);
-			return;
+			// TODO: you probably want to return here to prevent download
+			// return;
 		}
 		handleDownload($workbook_store, groupOfMembers);
-		console.log('Handle download');
 		return;
 	}
 
 	$: cur_first && change_second_input();
-	$: console.log(`Day = ${day}`);
 </script>
 
 <DownloadButton on:click={handleDownloadButton} {group_cnt} />
