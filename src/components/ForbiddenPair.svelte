@@ -1,6 +1,11 @@
 <script lang="ts">
-	import { data_store } from '../store';
+	import { getGroupError, randomGroup } from '$lib';
+	import { handleDownload } from '$lib/utils/sheetService';
+	import { data_store, workbook_store } from '../store';
 	import DownloadButton from './DownloadButton.svelte';
+
+	export let day: number;
+	export let group_cnt: number;
 
 	let forbiddenPairs: string[][] = [];
 
@@ -40,19 +45,27 @@
 		forbiddenPairs = forbiddenPairs.filter((p) => p[0] !== pair[0] || p[1] !== pair[1]);
 	}
 
+	function showModal(errors: string[]) {
+		// TODO: handle show modal
+		return;
+	}
+
 	function handleDownloadButton() {
 		// TODO: complete this function
-		const groups = randomGroup();
-		if (!validateGroups(groups)) {
-			showModal();
+		const { groups, groupOfMembers } = randomGroup($data_store, forbiddenPairs, day, group_cnt);
+		const errors = getGroupError(groups) as string[] | undefined;
+
+		if (errors && errors.length > 0) {
+			showModal(errors || []);
 			return;
 		}
-		handleDownload(groups);
+		handleDownload($workbook_store, groupOfMembers);
 		console.log('Handle download');
 		return;
 	}
 
 	$: cur_first && change_second_input();
+	$: console.log(`Day = ${day}`);
 </script>
 
 <DownloadButton on:click={handleDownloadButton} />

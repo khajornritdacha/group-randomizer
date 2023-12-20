@@ -17,7 +17,7 @@
 		<GroupInformation bind:group_cnt bind:day />
 	</div>
 	<div class="basis-1/2 m-5 flex flex-col items-center">
-		<ForbiddenPair />
+		<ForbiddenPair {day} {group_cnt} />
 	</div>
 </div>
 
