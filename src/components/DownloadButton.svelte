@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
+	export let group_cnt: number;
 	const dispatch = createEventDispatcher();
 
 	function handleClick() {
@@ -8,8 +9,9 @@
 </script>
 
 <button
-	class="text-3xl bg-red-500 hover:bg-red-600 text-gray-800 font-bold py-6 px-6 rounded-2xl inline-flex items-center cursor-pointer"
+	class="text-3xl bg-red-500 hover:bg-red-600 text-gray-800 font-bold py-6 px-6 rounded-2xl inline-flex items-center cursor-pointer disabled:opacity-50 disabled:pointer-events-none"
 	on:click={handleClick}
+	disabled={group_cnt === 0}
 >
 	<svg
 		class="fill-current w-6 h-6 mr-2 items-center"

@@ -5,4 +5,5 @@ export interface Person {
 	ex_camp: string;
 	gender: string;
 	id: number;
+	rand?: number;
 }

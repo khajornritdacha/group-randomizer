@@ -1,9 +1,10 @@
 <script lang="ts">
-	import { getGroupError, randomGroup } from '$lib';
+	import { getGroupError, GroupService } from '$lib/utils/groupService';
 	import { handleDownload } from '$lib/utils/sheetService';
 	import { data_store, workbook_store } from '../store';
 	import DownloadButton from './DownloadButton.svelte';
 
+	// TODO: maximum number of forbidden pairs is group size
 	export let day: number;
 	export let group_cnt: number;
 
@@ -52,7 +53,8 @@
 
 	function handleDownloadButton() {
 		// TODO: complete this function
-		const { groups, groupOfMembers } = randomGroup($data_store, forbiddenPairs, day, group_cnt);
+		const groupRandomizer = new GroupService($data_store, forbiddenPairs, day, group_cnt);
+		const { groups, groupOfMembers } = groupRandomizer.randomGroup();
 		const errors = getGroupError(groups) as string[] | undefined;
 
 		if (errors && errors.length > 0) {
@@ -68,7 +70,7 @@
 	$: console.log(`Day = ${day}`);
 </script>
 
-<DownloadButton on:click={handleDownloadButton} />
+<DownloadButton on:click={handleDownloadButton} {group_cnt} />
 <h1 class="pt-10 pb-5 text-4xl font-bold">Forbidden Pairs</h1>
 {#if $data_store.length === 0}
 	<p class="text-xl">Please Upload File</p>
