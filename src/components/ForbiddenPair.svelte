@@ -43,43 +43,47 @@
 </script>
 
 <h1 class="pt-10 pb-5 text-4xl font-bold">Forbidden Pairs</h1>
-<ol>
-	<!-- TODO: grid is recommended here -->
-	{#each forbiddenPairs as pair}
-		<li class="text-xl py-3 flex justify-between items-center border rounded-xl my-4">
-			<span class="px-5">{pair[0]}</span>
-			<span class="px-5">{pair[1]}</span>
+{#if $data_store.length === 0}
+	<p class="text-xl">Please Upload File</p>
+{:else}
+	<ol>
+		<!-- TODO: grid is recommended here -->
+		{#each forbiddenPairs as pair}
+			<li class="text-xl py-3 flex justify-between items-center border rounded-xl my-4">
+				<span class="px-5">{pair[0]}</span>
+				<span class="px-5">{pair[1]}</span>
+				<button
+					class="bg-red-500 hover:bg-red-600 text-gray-800 py-1 px-3 mx-2 rounded-2xl cursor-pointer"
+					on:click={() => handleRemove(pair)}>remove</button
+				>
+			</li>
+		{/each}
+		<li class="text-xl py-3 flex justify-between border rounded-xl my-4">
+			<select
+				class="mx-2 p-2 rounded"
+				placeholder="name1"
+				disabled={$data_store.length === 0}
+				bind:value={cur_first}
+			>
+				{#each $data_store as member}
+					<option value={member.name}>{member.name}</option>
+				{/each}
+			</select>
+			<select
+				class="mx-2 p-2 rounded"
+				placeholder="name2"
+				disabled={$data_store.length === 0 || cur_first === ''}
+				bind:value={cur_second}
+			>
+				{#each second_options as name}
+					<option value={name}>{name}</option>
+				{/each}
+			</select>
 			<button
-				class="bg-red-500 hover:bg-red-600 text-gray-800 py-1 px-3 mx-2 rounded-2xl cursor-pointer"
-				on:click={() => handleRemove(pair)}>remove</button
+				class="bg-red-500 hover:bg-red-600 text-gray-800 py-1 px-3 mx-2 rounded-2xl cursor-pointer disabled:opacity-50 disabled:pointer-events-none"
+				on:click={handleAdd}
+				disabled={cur_first === '' || cur_second === ''}>add</button
 			>
 		</li>
-	{/each}
-	<li class="text-xl py-3 flex justify-between border rounded-xl my-4">
-		<select
-			class="mx-2 p-2 rounded"
-			placeholder="name1"
-			disabled={$data_store.length === 0}
-			bind:value={cur_first}
-		>
-			{#each $data_store as member}
-				<option value={member.name}>{member.name}</option>
-			{/each}
-		</select>
-		<select
-			class="mx-2 p-2 rounded"
-			placeholder="name2"
-			disabled={$data_store.length === 0 || cur_first === ''}
-			bind:value={cur_second}
-		>
-			{#each second_options as name}
-				<option value={name}>{name}</option>
-			{/each}
-		</select>
-		<button
-			class="bg-red-500 hover:bg-red-600 text-gray-800 py-1 px-3 mx-2 rounded-2xl cursor-pointer disabled:opacity-50 disabled:pointer-events-none"
-			on:click={handleAdd}
-			disabled={cur_first === '' || cur_second === ''}>add</button
-		>
-	</li>
-</ol>
+	</ol>
+{/if}
