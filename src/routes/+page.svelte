@@ -1,10 +1,8 @@
 <script lang="ts">
-	import DownloadButton from '../components/DownloadButton.svelte';
 	import DropMember from '../components/DropMember.svelte';
 	import Footer from '../components/Footer.svelte';
 	import ForbiddenPair from '../components/ForbiddenPair.svelte';
 	import GroupInformation from '../components/GroupInformation.svelte';
-	// import Modal from 'svelte-parts/Modal.svelte';
 
 	let group_cnt = 0;
 	let day = 1;
@@ -19,7 +17,6 @@
 		<GroupInformation bind:group_cnt bind:day />
 	</div>
 	<div class="basis-1/2 m-5 flex flex-col items-center">
-		<DownloadButton />
 		<ForbiddenPair />
 	</div>
 </div>

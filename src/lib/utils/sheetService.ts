@@ -1,8 +1,7 @@
-import { read } from 'xlsx';
+import { type WorkBook } from 'xlsx';
 
-export function loadFromSheet(raw_sheet: ArrayBuffer) {
+export function loadFromSheet(workbook: WorkBook) {
 	// TODO: Add flexibility to attribute
-	const workbook = read(raw_sheet);
 	const data = [];
 	for (let i = 2; ; i++) {
 		if (!workbook.Sheets['database'][`A${i}`]) break;

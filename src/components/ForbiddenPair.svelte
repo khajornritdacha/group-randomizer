@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { data_store } from '../store';
+	import DownloadButton from './DownloadButton.svelte';
 
 	let forbiddenPairs: string[][] = [];
 
@@ -39,9 +40,22 @@
 		forbiddenPairs = forbiddenPairs.filter((p) => p[0] !== pair[0] || p[1] !== pair[1]);
 	}
 
+	function handleDownloadButton() {
+		// TODO: complete this function
+		const groups = randomGroup();
+		if (!validateGroups(groups)) {
+			showModal();
+			return;
+		}
+		handleDownload(groups);
+		console.log('Handle download');
+		return;
+	}
+
 	$: cur_first && change_second_input();
 </script>
 
+<DownloadButton on:click={handleDownloadButton} />
 <h1 class="pt-10 pb-5 text-4xl font-bold">Forbidden Pairs</h1>
 {#if $data_store.length === 0}
 	<p class="text-xl">Please Upload File</p>
