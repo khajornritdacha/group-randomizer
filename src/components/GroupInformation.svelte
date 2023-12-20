@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { data } from '../store';
+	import { data_store } from '../store';
 
 	export let group_cnt: number;
 	export let day: number;
@@ -12,7 +12,7 @@
 	<h2 class="py-3 text-2xl flex font-bold">Number of members :</h2>
 	<input
 		type="number"
-		bind:value={$data.length}
+		bind:value={$data_store.length}
 		disabled
 		class="p-2 ml-2 rounded grow"
 		id="n_member"
