@@ -7,3 +7,5 @@ export async function onDrop(files: File[]) {
 	const workbook = read(raw_sheet);
 	console.log(workbook);
 }
+
+export async function onDownload() {}
