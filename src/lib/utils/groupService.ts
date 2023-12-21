@@ -1,6 +1,5 @@
-import type { Person } from '../types';
+import { GENDER, type Person } from '../types';
 
-// TODO: force men to be 1-st index and women to 2-nd index in every basis group to ensure every group has all genders
 export class GroupService {
 	readonly data: Person[];
 	readonly forbiddenPairs: string[][];
@@ -65,13 +64,28 @@ export class GroupService {
 
 		// sort by gender and then rand value
 		this.sortByGenderRand(basis);
+
+		// fix gender position (randomly select 1 male to index-0 and 1 women to index-1)
+		this.fixGenderPosition(basis);
 		return basis;
+	}
+
+	fixGenderPosition(basis: Person[][]) {
+		const genderVals = Object.values(GENDER);
+		for (let g = 0; g < basis.length; g++) {
+			genderVals.forEach((gender, idx) => {
+				const person = this.getRandomPersonGender(gender, basis[g]);
+				if (!person) return;
+				basis[g] = basis[g].filter((p) => p.id !== person.id);
+				basis[g].splice(idx, 0, person);
+			});
+		}
 	}
 
 	fillWithRandom(basis: Person[][]) {
 		for (let g = 0; g < basis.length; g++) {
 			while (this.checkInsertSize(1, basis[g])) {
-				const person = this.getRandomPerson();
+				const person = this.getRandomPerson(this.newData);
 				basis[g].push(person);
 				this.newData = this.newData.filter((p) => p.id !== person.id);
 			}
@@ -96,7 +110,7 @@ export class GroupService {
 			const gender_cnt = this.countGender(basis[g]);
 			for (const gender in gender_cnt) {
 				if (gender_cnt[gender] === 0 && this.checkInsertSize(1, basis[g])) {
-					const person = this.randomPersonWithGender(gender);
+					const person = this.getRandomPersonGender(gender);
 					if (!person) continue;
 					basis[g].push(person);
 					this.newData = this.newData.filter((p) => p.id !== person.id);
@@ -163,15 +177,25 @@ export class GroupService {
 		);
 	}
 
-	randomPersonWithGender(gender: string) {
-		const arr = this.newData.filter((person) => person.gender == gender);
-		const rand = Math.floor(Math.random() * arr.length);
-		return arr[rand];
+	// getRandomPersonGender(gender: string) {
+	// 	const arr = this.newData.filter((person) => person.gender == gender);
+	// 	const rand = Math.floor(Math.random() * arr.length);
+	// 	return arr[rand];
+	// }
+
+	getRandomPersonGender(gender: string, data?: Person[]) {
+		if (data) {
+			const arr = data.filter((person) => person.gender == gender);
+			return this.getRandomPerson(arr);
+		} else {
+			const arr = this.newData.filter((person) => person.gender == gender);
+			return this.getRandomPerson(arr);
+		}
 	}
 
-	getRandomPerson() {
-		const rand = Math.floor(Math.random() * this.newData.length);
-		return this.newData[rand];
+	getRandomPerson(arr: Person[]) {
+		const rand = Math.floor(Math.random() * arr.length);
+		return arr[rand];
 	}
 
 	calculateGroupId(base_group: number, round: number, day: number): number {

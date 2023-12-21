@@ -6,8 +6,6 @@
 
 	let group_cnt = 0;
 	let day = 1;
-
-	$: console.log(`group_cnt = ${group_cnt}`);
 </script>
 
 <h1 class="font-bold text-7xl text-center py-10 text-indigo-950">Group Randomizer</h1>

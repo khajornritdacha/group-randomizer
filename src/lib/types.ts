@@ -7,3 +7,8 @@ export interface Person {
 	id: number;
 	rand?: number;
 }
+
+export const GENDER = Object.freeze({
+	man: '1',
+	woman: '2'
+});
