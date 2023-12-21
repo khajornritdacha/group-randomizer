@@ -11,6 +11,7 @@
 <button
 	class="text-3xl bg-red-500 hover:bg-red-600 text-gray-800 font-bold py-6 px-6 rounded-2xl inline-flex items-center cursor-pointer disabled:opacity-50 disabled:pointer-events-none"
 	on:click={handleClick}
+	aria-label="Download"
 	disabled={group_cnt === 0}
 >
 	<svg
@@ -20,3 +21,6 @@
 	>
 	<span>Download</span>
 </button>
+{#if group_cnt === 0}
+	<p class="text-xl">Please Select Number of Groups</p>
+{/if}
