@@ -3,7 +3,6 @@ import { type WorkBook, writeFile, utils, type CellObject } from 'xlsx';
 const GROUP_ASSIGN_SHEET_NAME = 'group_assign';
 
 export function loadFromSheet(workbook: WorkBook) {
-	// TODO: Add flexibility to attribute
 	const data = [];
 	for (let i = 2; ; i++) {
 		if (!workbook.Sheets['database'][`A${i}`]) break;
