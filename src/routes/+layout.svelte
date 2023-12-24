@@ -1,22 +1,14 @@
 <script lang="ts">
-    import "../app.css";
+	import '../app.css';
+	import Footer from '../components/Footer.svelte';
 </script>
 
 <head>
-    <title>Group Randomizer</title>
+	<title>Group Randomizer</title>
 </head>
 
-<!-- <div class="bg-gray-400 text-white py-4">
-    <nav>
-        <ul class="flex justify-center gap-3">
-            <li><a href="/">Home</a></li>
-            <li><a href="/about">About</a></li>
-        </ul>
-    </nav>
-</div> -->
-
-<body class="bg-indigo-300 flex-grow content-between">
-    <slot />
+<body class="bg-indigo-300">
+	<slot />
 </body>
 
-<!-- <footer class="bg-purple-500/20 py-5 text-center content-end">Powered by J.</footer> -->
+<Footer />

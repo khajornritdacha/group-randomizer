@@ -8,8 +8,9 @@
 	$: console.log(`group_cnt in children= ${group_cnt}`);
 </script>
 
-<div class="flex flex-col pt-10 justify-center">
-	<h2 class="py-3 text-2xl flex font-bold">Number of members :</h2>
+<h1 class="pt-10 pb-5 text-4xl font-bold text-indigo-950 text-center">Group Information</h1>
+<div class="grid grid-cols-2 py-4">
+	<h2 class="py-3 text-2xl text-indigo-950 font-bold">Number of members :</h2>
 	<input
 		type="number"
 		bind:value={$data_store.length}
@@ -17,13 +18,17 @@
 		class="p-2 ml-2 rounded grow"
 		id="n_member"
 	/>
-	<h2 class="py-3 text-2xl flex font-bold">Number of groups :</h2>
+</div>
+<div class="grid grid-cols-2 py-4">
+	<h2 class="py-3 text-2xl text-indigo-950 font-bold">Number of groups :</h2>
 	<select bind:value={group_cnt} class="p-2 ml-2 rounded grow" id="n_group">
 		{#each PRIMES as prime}
 			<option value={prime}>{prime}</option>
 		{/each}
 	</select>
-	<h2 class="py-3 text-2xl flex font-bold">Number of days :</h2>
+</div>
+<div class="grid grid-cols-2 py-4">
+	<h2 class="py-3 text-2xl text-indigo-950 font-bold">Number of days :</h2>
 	<input
 		type="number"
 		bind:value={day}
