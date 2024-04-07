@@ -35,6 +35,14 @@
 	}
 </script>
 
+<div class="absolute top-2 right-2">
+	<a
+		href="https://github.com/khajornritdacha/group-randomizer/tree/main?tab=readme-ov-file#group-randomizer"
+		target="_blank"
+		class="rounded-full inline-block leading-[0] font-bold text-center text-2xl bg-orange-primary hover:bg-orange-primary-darken text-white-secondary p-5"
+		>How to Use</a
+	>
+</div>
 <div class="flex">
 	<div
 		class="flex flex-col items-center min-h-[100vh] justify-evenly px-[5%] max-w-[50%] basis-1/2"
@@ -42,7 +50,7 @@
 		<h1
 			class="font-bold text-7xl text-center py-10 text-[#E57F31] bg-[#E5E2D9] font-scaryHalloween"
 		>
-			Group Randomizer
+			🕯️Suksa🕯️ Random
 		</h1>
 		<div class="min-h-max w-[80%]">
 			<DropMember />
