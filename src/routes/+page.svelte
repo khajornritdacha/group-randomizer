@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { GroupService } from '$lib/utils/groupService';
 	import { handleDownload } from '$lib/utils/sheetService';
+	import Background from '../components/Background.svelte';
 	import DownloadButton from '../components/DownloadButton.svelte';
 	import DropMember from '../components/DropMember.svelte';
 	import Footer from '../components/Footer.svelte';
@@ -27,7 +28,6 @@
 			console.warn(errors);
 			// TODO: handle show modal
 			showModal(errors || []);
-			// TODO: you probably want to return here to prevent download
 			// return;
 		}
 		handleDownload($workbook_store, groupOfMembers, disableGenerateControlSheet);
@@ -35,6 +35,7 @@
 	}
 </script>
 
+<Background />
 <div class="absolute top-2 right-2">
 	<a
 		href="https://github.com/khajornritdacha/group-randomizer/tree/main?tab=readme-ov-file#group-randomizer"
@@ -43,16 +44,16 @@
 		>How to Use</a
 	>
 </div>
-<div class="flex">
+<div class="flex bg-none">
 	<div
 		class="flex flex-col items-center min-h-[100vh] justify-evenly px-[5%] max-w-[50%] basis-1/2"
 	>
 		<h1
-			class="font-bold text-7xl text-center py-10 text-[#E57F31] bg-[#E5E2D9] font-scaryHalloween"
+			class="bg-none font-bold text-7xl text-center py-10 text-[#E57F31] bg-[#E5E2D9] font-scaryHalloween"
 		>
 			🕯️Suksa🕯️ Random
 		</h1>
-		<div class="min-h-max w-[80%]">
+		<div class="min-h-max w-[80%] z-10">
 			<DropMember />
 		</div>
 	</div>
@@ -76,13 +77,3 @@
 		{/if}
 	</div>
 </div>
-<!-- <div class="flex flex-row"></div> -->
-
-<!-- TODO: let me learn about $: first, and I will go back to create modal -->
-<!-- <Modal open={...} onClose={() => ...}>
-    <div class="bg-yellow-500 p-2 rounded-2 flex">
-        <h2 class="font-bold">Warning!</h2>
-    </div>
-</Modal> -->
-
-<!-- <Footer /> -->
