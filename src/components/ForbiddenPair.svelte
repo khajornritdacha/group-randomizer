@@ -43,15 +43,15 @@
 </script>
 
 <div class="py-5 flex-col items-center">
-	<h1 class="pt-10 pb-5 text-4xl font-bold">Forbidden Pairs</h1>
+	<h1 class="pt-10 pb-5 text-4xl font-bold text-center">Forbidden Pairs</h1>
 	<ol>
 		{#each forbiddenPairs as pair}
 			<li class="text-xl py-3 flex justify-between items-center border rounded-xl my-4">
 				<span class="px-5">{pair[0]}</span>
 				<span class="px-5">{pair[1]}</span>
 				<button
-					class="bg-red-500 hover:bg-red-600 text-gray-800 py-1 px-3 mx-2 rounded-2xl cursor-pointer"
-					on:click={() => handleRemove(pair)}>remove</button
+					class="bg-orange-primary hover:bg-orange-primary-darken text-white-secondary transition-all py-1 px-3 mx-2 rounded-2xl cursor-pointer font-scaryHalloween"
+					on:click={() => handleRemove(pair)}>Remove</button
 				>
 			</li>
 		{/each}
@@ -77,9 +77,9 @@
 				{/each}
 			</select>
 			<button
-				class="bg-red-500 hover:bg-red-600 text-gray-800 py-1 px-3 mx-2 rounded-2xl cursor-pointer disabled:opacity-50 disabled:pointer-events-none"
+				class="bg-orange-primary hover:bg-orange-primary-darken text-white-secondary transition-all py-1 px-3 mx-2 rounded-2xl cursor-pointer disabled:opacity-50 disabled:pointer-events-none font-scaryHalloween"
 				on:click={handleAdd}
-				disabled={cur_first === '' || cur_second === ''}>add</button
+				disabled={cur_first === '' || cur_second === ''}>Add</button
 			>
 		</li>
 	</ol>
