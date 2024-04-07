@@ -9,7 +9,9 @@
 	let disableGenerateControlSheet: boolean = false;
 </script>
 
-<h1 class="font-bold text-7xl text-center py-10 text-indigo-950">Group Randomizer</h1>
+<h1 class="font-bold text-7xl text-center py-10 text-[#E57F31] bg-[#E5E2D9] font-scaryHalloween">
+	Group Randomizer
+</h1>
 <div class="flex flex-row">
 	<div class="basis-1/2 m-5 flex flex-col items-center">
 		<DropMember />

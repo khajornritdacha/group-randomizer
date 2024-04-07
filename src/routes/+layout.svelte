@@ -1,9 +1,9 @@
 <script lang="ts">
-    import "../app.css";
+	import '../app.css';
 </script>
 
 <head>
-    <title>Group Randomizer</title>
+	<title>Group Randomizer</title>
 </head>
 
 <!-- <div class="bg-gray-400 text-white py-4">
@@ -15,8 +15,8 @@
     </nav>
 </div> -->
 
-<body class="bg-indigo-300 flex-grow content-between">
-    <slot />
+<body class="bg-[#251F2C] flex-grow content-between">
+	<slot />
 </body>
 
 <!-- <footer class="bg-purple-500/20 py-5 text-center content-end">Powered by J.</footer> -->
