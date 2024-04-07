@@ -7,6 +7,7 @@
 	// TODO: maximum number of forbidden pairs is group size
 	export let day: number;
 	export let group_cnt: number;
+	export let disableGenerateControlSheet: boolean;
 
 	let forbiddenPairs: string[][] = [];
 
@@ -62,7 +63,7 @@
 			// TODO: you probably want to return here to prevent download
 			// return;
 		}
-		handleDownload($workbook_store, groupOfMembers);
+		handleDownload($workbook_store, groupOfMembers, disableGenerateControlSheet);
 		return;
 	}
 

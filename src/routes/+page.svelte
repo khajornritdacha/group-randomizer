@@ -6,16 +6,17 @@
 
 	let group_cnt = 0;
 	let day = 1;
+	let disableGenerateControlSheet: boolean = false;
 </script>
 
 <h1 class="font-bold text-7xl text-center py-10 text-indigo-950">Group Randomizer</h1>
 <div class="flex flex-row">
 	<div class="basis-1/2 m-5 flex flex-col items-center">
 		<DropMember />
-		<GroupInformation bind:group_cnt bind:day />
+		<GroupInformation bind:group_cnt bind:day bind:disableGenerateControlSheet />
 	</div>
 	<div class="basis-1/2 m-5 flex flex-col items-center">
-		<ForbiddenPair {day} {group_cnt} />
+		<ForbiddenPair {day} {group_cnt} {disableGenerateControlSheet} />
 	</div>
 </div>
 
