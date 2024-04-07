@@ -1,15 +1,7 @@
 <script lang="ts">
-	import { GroupService } from '$lib/utils/groupService';
-	import { handleDownload } from '$lib/utils/sheetService';
-	import { data_store, workbook_store } from '../store';
-	import DownloadButton from './DownloadButton.svelte';
+	import { data_store } from '../store';
 
-	// TODO: maximum number of forbidden pairs is group size
-	export let day: number;
-	export let group_cnt: number;
-	export let disableGenerateControlSheet: boolean;
-
-	let forbiddenPairs: string[][] = [];
+	export let forbiddenPairs: string[][];
 
 	let cur_first = '';
 	let cur_second = '';
@@ -47,36 +39,12 @@
 		forbiddenPairs = forbiddenPairs.filter((p) => p[0] !== pair[0] || p[1] !== pair[1]);
 	}
 
-	function showModal(errors: string[]) {
-		// TODO: handle show modal
-		return;
-	}
-
-	function handleDownloadButton() {
-		const groupService = new GroupService($data_store, forbiddenPairs, day, group_cnt);
-		const { groups, groupOfMembers } = groupService.randomGroup();
-		const errors = groupService.getGroupError(groups) as string[] | undefined;
-		if (errors && errors.length > 0) {
-			console.warn(errors);
-			// TODO: handle show modal
-			showModal(errors || []);
-			// TODO: you probably want to return here to prevent download
-			// return;
-		}
-		handleDownload($workbook_store, groupOfMembers, disableGenerateControlSheet);
-		return;
-	}
-
 	$: cur_first && change_second_input();
 </script>
 
-<DownloadButton on:click={handleDownloadButton} {group_cnt} />
-<h1 class="pt-10 pb-5 text-4xl font-bold">Forbidden Pairs</h1>
-{#if $data_store.length === 0}
-	<p class="text-xl">Please Upload File</p>
-{:else}
+<div class="py-5 flex-col items-center">
+	<h1 class="pt-10 pb-5 text-4xl font-bold">Forbidden Pairs</h1>
 	<ol>
-		<!-- TODO: grid is recommended here -->
 		{#each forbiddenPairs as pair}
 			<li class="text-xl py-3 flex justify-between items-center border rounded-xl my-4">
 				<span class="px-5">{pair[0]}</span>
@@ -115,4 +83,4 @@
 			>
 		</li>
 	</ol>
-{/if}
+</div>

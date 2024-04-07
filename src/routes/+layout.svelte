@@ -15,7 +15,7 @@
     </nav>
 </div> -->
 
-<body class="bg-[#251F2C] flex-grow content-between">
+<body class="bg-[#E5E2D9] flex-grow content-between">
 	<slot />
 </body>
 

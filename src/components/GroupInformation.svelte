@@ -4,11 +4,12 @@
 	export let group_cnt: number;
 	export let day: number;
 	export let disableGenerateControlSheet: boolean;
+	export let enableForbiddenPairs: boolean;
 	const PRIMES = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29];
 </script>
 
-<div class="flex flex-col pt-10 justify-center">
-	<label class="py-3 text-2xl flex font-bold" for="n_member">Number of members :</label>
+<div class="flex flex-col justify-center gap-3">
+	<label class="py-3 text-xl flex font-bold" for="n_member">Number of members :</label>
 	<input
 		type="number"
 		bind:value={$data_store.length}
@@ -16,7 +17,7 @@
 		class="p-2 ml-2 rounded grow"
 		id="n_member"
 	/>
-	<label class="py-3 text-2xl flex font-bold" for="n_group">Number of groups :</label>
+	<label class="py-3 text-xl flex font-bold" for="n_group">Number of groups :</label>
 	<select
 		bind:value={group_cnt}
 		class="p-2 ml-2 rounded grow"
@@ -27,7 +28,7 @@
 			<option value={prime}>{prime}</option>
 		{/each}
 	</select>
-	<label class="py-3 text-2xl flex font-bold" for="n_day">Number of days :</label>
+	<label class="py-3 text-xl flex font-bold" for="n_day">Number of days :</label>
 	<input
 		type="number"
 		bind:value={day}
@@ -37,12 +38,23 @@
 		class="p-2 ml-2 rounded grow"
 		id="n_day"
 	/>
-	<input
-		type="checkbox"
-		bind:checked={disableGenerateControlSheet}
-		disabled={!group_cnt}
-		class="p-2 ml-2 rounded grow"
-		id="control_sheet"
-	/>
-	<label class="py-3 text-2xl flex font-bold" for="control_sheet">Don't generate template</label>
+	<div class="flex justify-between gap-4 items-center">
+		<input
+			type="checkbox"
+			bind:checked={disableGenerateControlSheet}
+			disabled={!group_cnt}
+			class="p-2 ml-2 rounded grow mt-1"
+			id="control_sheet"
+		/>
+		<label class="py-3 text-xl flex font-bold" for="control_sheet">Don't generate template</label>
+	</div>
+	<div class="flex justify-between gap-4 items-center">
+		<input
+			type="checkbox"
+			bind:checked={enableForbiddenPairs}
+			class="p-2 ml-2 rounded grow mt-1"
+			id="control_sheet"
+		/>
+		<label class="py-3 text-xl flex font-bold" for="control_sheet">Enable Forbidden Pairs</label>
+	</div>
 </div>

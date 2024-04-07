@@ -9,7 +9,7 @@
 </script>
 
 <button
-	class="text-3xl bg-red-500 hover:bg-red-600 text-gray-800 font-bold py-6 px-6 rounded-2xl inline-flex items-center cursor-pointer disabled:opacity-50 disabled:pointer-events-none"
+	class="text-3xl bg-[#E57F31] hover:bg-[#dc701d] text-[#E5E2D9] transition-all font-bold py-6 px-6 rounded-2xl inline-flex items-center cursor-pointer disabled:opacity-50 disabled:pointer-events-none font-scaryHalloween"
 	on:click={handleClick}
 	aria-label="Download"
 	disabled={group_cnt === 0}
@@ -21,6 +21,3 @@
 	>
 	<span>Download</span>
 </button>
-{#if group_cnt === 0}
-	<p class="text-xl">Please Select Number of Groups</p>
-{/if}
