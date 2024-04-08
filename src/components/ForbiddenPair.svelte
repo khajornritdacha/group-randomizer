@@ -44,11 +44,11 @@
 
 <div class="py-5 flex-col items-center">
 	<h1 class="pt-10 pb-5 text-4xl font-bold text-center">Forbidden Pairs</h1>
-	<ol>
+	<ol class="flex flex-col items-center">
 		{#each forbiddenPairs as pair}
 			<li class="text-xl py-3 flex justify-between items-center border rounded-xl my-4">
-				<span class="px-5">{pair[0]}</span>
-				<span class="px-5">{pair[1]}</span>
+				<span class="px-5 text-nowrap">{pair[0]}</span>
+				<span class="px-5 text-no-wrap">{pair[1]}</span>
 				<button
 					class="bg-orange-primary hover:bg-orange-primary-darken text-white-secondary transition-all py-1 px-3 mx-2 rounded-2xl cursor-pointer font-scaryHalloween"
 					on:click={() => handleRemove(pair)}>Remove</button

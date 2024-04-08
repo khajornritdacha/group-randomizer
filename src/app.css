@@ -18,6 +18,7 @@
 	width: 50%;
 	height: 100%;
 	overflow: hidden;
+	display: none;
 }
 
 .pumpkin-bg li {

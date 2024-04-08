@@ -44,15 +44,22 @@
 		>How to Use</a
 	>
 </div>
-<div class="flex bg-none">
+<div class="flex bg-none flex-col items-center overflow-x-hidden lg:flex-row">
 	<div
-		class="flex flex-col items-center min-h-[100vh] justify-evenly px-[5%] max-w-[50%] basis-1/2"
+		class="flex flex-col items-center min-h-[100vh] justify-evenly px-[5%] lg:max-w-[50%] basis-1/2"
 	>
-		<h1
-			class="bg-none font-bold text-7xl text-center py-10 text-[#E57F31] bg-[#E5E2D9] font-scaryHalloween"
-		>
-			🕯️Suksa🕯️ Random
-		</h1>
+		<div>
+			<h1
+				class="text-nowrap bg-none font-bold text-5xl lg:text-7xl text-center py-10 text-[#E57F31] bg-[#E5E2D9] font-scaryHalloween"
+			>
+				🕯️Suksa🕯️
+			</h1>
+			<h1
+				class="text-nowrap bg-none font-bold text-5xl lg:text-7xl text-center py-10 text-[#E57F31] bg-[#E5E2D9] font-scaryHalloween"
+			>
+				Random
+			</h1>
+		</div>
 		<div class="min-h-max w-[80%] z-10">
 			<DropMember />
 		</div>

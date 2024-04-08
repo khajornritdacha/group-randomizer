@@ -1,4 +1,4 @@
-<ul class="pumpkin-bg">
+<ul class="pumpkin-bg lg::block">
 	<li></li>
 	<li></li>
 	<li></li>
