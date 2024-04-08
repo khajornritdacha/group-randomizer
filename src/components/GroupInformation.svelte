@@ -54,8 +54,8 @@
 			bind:checked={enableForbiddenPairs}
 			disabled={!group_cnt}
 			class="p-2 ml-2 rounded grow mt-1"
-			id="control_sheet"
+			id="forbiddenPairs"
 		/>
-		<label class="py-3 text-xl flex font-bold" for="control_sheet">Enable Forbidden Pairs</label>
+		<label class="py-3 text-xl flex font-bold" for="forbiddenPairs">Enable Forbidden Pairs</label>
 	</div>
 </div>
