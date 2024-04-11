@@ -1,6 +1,5 @@
-import type { Person } from '../types';
+import type { Person } from '$lib/types';
 
-// TODO: force men to be 1-st index and women to 2-nd index in every basis group to ensure every group has all genders
 export class GroupService {
 	readonly data: Person[];
 	readonly forbiddenPairs: string[][];
@@ -51,56 +50,23 @@ export class GroupService {
 	}
 
 	generateBasisGroup(): Person[][] {
-		this.newData = this.data.map((person: Person) => ({ ...person, rand: Math.random() }));
+		this.newData = this.data.map((person: Person) => ({ ...person }));
 		const basis = Array.from({ length: this.TOTAL_GROUP }, () => []) as Person[][];
 
 		// insert all forbidden pairs
 		this.insertForbiddenPairs(basis);
 
-		// ensure men and women
-		this.ensureGender(basis);
-
 		// fill leftover slots with random people
 		this.fillWithRandom(basis);
-
-		// sort by gender and then rand value
-		this.sortByGenderRand(basis);
 		return basis;
 	}
 
 	fillWithRandom(basis: Person[][]) {
 		for (let g = 0; g < basis.length; g++) {
 			while (this.checkInsertSize(1, basis[g])) {
-				const person = this.getRandomPerson();
+				const person = this.getRandomPerson(this.newData);
 				basis[g].push(person);
 				this.newData = this.newData.filter((p) => p.id !== person.id);
-			}
-		}
-	}
-
-	sortByGenderRand(basis: Person[][]) {
-		// it should ensure that all women align in the same position
-		for (let i = 0; i < basis.length; i++) {
-			basis[i].sort((a, b) => {
-				if (a.gender === b.gender && a?.rand && b?.rand) {
-					return a.rand < b.rand ? -1 : 1;
-				}
-				return a.gender < b.gender ? -1 : 1;
-			});
-		}
-		return basis;
-	}
-
-	ensureGender(basis: Person[][]) {
-		for (let g = 0; g < basis.length; g++) {
-			const gender_cnt = this.countGender(basis[g]);
-			for (const gender in gender_cnt) {
-				if (gender_cnt[gender] === 0 && this.checkInsertSize(1, basis[g])) {
-					const person = this.randomPersonWithGender(gender);
-					if (!person) continue;
-					basis[g].push(person);
-					this.newData = this.newData.filter((p) => p.id !== person.id);
-				}
 			}
 		}
 	}
@@ -151,27 +117,9 @@ export class GroupService {
 		return false;
 	}
 
-	countGender(group: Person[]) {
-		return group.reduce(
-			(agg, person) => {
-				if (!(person.gender in agg))
-					throw new Error(`Invalid gender expect 1 or 2, found ${person.gender}`);
-				agg[person.gender]++;
-				return agg;
-			},
-			{ '1': 0, '2': 0 } as { [key: string]: number }
-		);
-	}
-
-	randomPersonWithGender(gender: string) {
-		const arr = this.newData.filter((person) => person.gender == gender);
+	getRandomPerson(arr: Person[]) {
 		const rand = Math.floor(Math.random() * arr.length);
 		return arr[rand];
-	}
-
-	getRandomPerson() {
-		const rand = Math.floor(Math.random() * this.newData.length);
-		return this.newData[rand];
 	}
 
 	calculateGroupId(base_group: number, round: number, day: number): number {
@@ -179,31 +127,18 @@ export class GroupService {
 		return ((base_group + round * day) % this.TOTAL_GROUP) + 1;
 	}
 
+	/**
+	 * 1. Number of people in a group must be in range [MAX_GROUP_SIZE - 1, MAX_GROUP_SIZE]
+	 * 2. No pair of member in a group meet twice
+	 * @param groups
+	 * @returns
+	 */
 	getGroupError(groups: Person[][][]) {
-		// TODO: validate group by the following conditions:
-		// 1. Every group must have at least 1 male and 1 female
-		// 2. Number of people in a group must be in range [MAX_GROUP_SIZE - 1, MAX_GROUP_SIZE]
-		// 3. No pair of member in a group meet twice
 		const errors: string[] = [];
-		this.getGenderError(errors, groups);
 		this.getMeetError(errors, groups);
 		this.getSizeError(errors, groups);
 		this.getForbiddenPairError(errors, groups);
 		return errors;
-	}
-
-	getGenderError(errors: string[], groups: Person[][][]) {
-		for (let g = 0; g < groups.length; g++) {
-			for (let d = 0; d < groups[g].length; d++) {
-				const gender_cnt = this.countGender(groups[g][d]);
-				for (const gender in gender_cnt) {
-					if (gender_cnt[gender] === 0) {
-						errors.push(`Some group do not have all gender, group ${g + 1} day ${d + 1}`);
-						return;
-					}
-				}
-			}
-		}
 	}
 
 	getMeetError(errors: string[], groups: Person[][][]) {
@@ -218,7 +153,7 @@ export class GroupService {
 						meet_cnt[groups[g][d][j].id - 1][groups[g][d][i].id - 1]++;
 						if (meet_cnt[groups[g][d][i].id - 1][groups[g][d][j].id - 1] > 1) {
 							errors.push(
-								`Some group meet twice: ${groups[g][d][i].name} and ${groups[g][d][j].name}`
+								`Some pairs meet twice: ${groups[g][d][i].name} and ${groups[g][d][j].name}`
 							);
 							return;
 						}
