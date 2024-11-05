@@ -43,10 +43,10 @@
 </script>
 
 <div class="py-5 flex-col items-center">
-	<h1 class="pt-10 pb-5 text-4xl font-bold text-center">Forbidden Pairs</h1>
-	<ol class="flex flex-col items-center">
+	<h1 class="pt-4 pb-5 text-4xl font-bold text-center">Forbidden Pairs</h1>
+	<ol class="flex flex-col justify-center">
 		{#each forbiddenPairs as pair}
-			<li class="text-xl py-3 flex justify-between items-center border rounded-xl my-4">
+			<li class="text-xl py-1 grid grid-cols-3 justify-items-center items-center border rounded-xl mt-2">
 				<span class="px-5 text-nowrap">{pair[0]}</span>
 				<span class="px-5 text-no-wrap">{pair[1]}</span>
 				<button
@@ -55,9 +55,9 @@
 				>
 			</li>
 		{/each}
-		<li class="text-xl py-3 flex justify-between border rounded-xl my-4">
+		<li class="text-xl py-1 grid grid-cols-3 justify-items-center border rounded-xl my-2">
 			<select
-				class="mx-2 p-2 rounded"
+				class="mx-2 p-2 rounded w-[90%]"
 				placeholder="name1"
 				disabled={$data_store.length === 0}
 				bind:value={cur_first}
@@ -67,7 +67,7 @@
 				{/each}
 			</select>
 			<select
-				class="mx-2 p-2 rounded"
+				class="mx-2 p-2 rounded w-[90%]"
 				placeholder="name2"
 				disabled={$data_store.length === 0 || cur_first === ''}
 				bind:value={cur_second}

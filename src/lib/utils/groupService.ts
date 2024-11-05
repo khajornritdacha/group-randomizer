@@ -6,10 +6,11 @@ export class GroupService {
 	readonly DAY: number;
 	readonly TOTAL_GROUP: number;
 	readonly MAX_GROUP_SIZE: number;
+	leader: Person[];
 	newData: Person[];
 	leftMaxGroupSize: number; // Count number of groups that can have maximum group size
 
-	constructor(data: Person[], forbiddenPairs: string[][], DAY: number, TOTAL_GROUP: number) {
+	constructor(data: Person[], leader: Person[], forbiddenPairs: string[][], DAY: number, TOTAL_GROUP: number) {
 		shuffle(data);
 		this.data = data;
 		this.forbiddenPairs = forbiddenPairs;
@@ -19,6 +20,7 @@ export class GroupService {
 		this.newData = [];
 		this.leftMaxGroupSize =
 			this.data.length - this.TOTAL_GROUP * Math.floor(this.data.length / this.TOTAL_GROUP);
+		this.leader = leader;
 	}
 
 	randomGroup() {
@@ -53,8 +55,11 @@ export class GroupService {
 		this.newData = this.data.map((person: Person) => ({ ...person }));
 		const basis = Array.from({ length: this.TOTAL_GROUP }, () => []) as Person[][];
 
+		// insert leader
+		this.insertLeader(basis);
+
 		// insert all forbidden pairs
-		this.insertForbiddenPairs(basis);
+		if (this.leader.length > 0) this.insertForbiddenPairs(basis);
 
 		// fill leftover slots with random people
 		this.fillWithRandom(basis);
@@ -71,14 +76,25 @@ export class GroupService {
 		}
 	}
 
+	insertLeader(basis: Person[][]) {
+		for (let g = 0; g < basis.length; g++) {
+			const leader = this.getRandomPerson(this.leader);
+			const person1 = this.newData.find((person) => person.name === leader.name);
+			if (person1) {
+				basis[g].push(person1);
+				this.newData = this.newData.filter((p) => p.id !== person1.id);
+				this.leader = this.leader.filter((p) => p.name !== leader.name);
+			}
+		}
+	}
+	
 	insertForbiddenPairs(basis: Person[][]) {
 		let g = 0;
 		this.forbiddenPairs.forEach((pair) => {
 			let person1 = this.newData.find((person) => person.name === pair[0]);
 			let person2 = this.newData.find((person) => person.name === pair[1]);
 			if (person1 && person2) {
-				// Current version only allow upto 2 people with forbidden pairs
-				if (basis[g].length === 0) {
+				if (this.checkInsertSize(2, basis[g])) {
 					this.newData = this.newData.filter(
 						(person) => person.id !== person1?.id && person.id !== person2?.id
 					);

@@ -4,14 +4,13 @@
 	import Background from '../components/Background.svelte';
 	import DownloadButton from '../components/DownloadButton.svelte';
 	import DropMember from '../components/DropMember.svelte';
-	import Footer from '../components/Footer.svelte';
 	import ForbiddenPair from '../components/ForbiddenPair.svelte';
 	import GroupInformation from '../components/GroupInformation.svelte';
-	import { data_store, workbook_store } from '../store';
+	import { data_store, leader_store, workbook_store } from '../store';
 
 	let group_cnt = 0;
 	let day = 1;
-	let disableGenerateControlSheet: boolean = false;
+	let disableGenerateControlSheet: boolean = true;
 	let forbiddenPairs: string[][] = [];
 	let enableForbiddenPairs: boolean = false;
 
@@ -21,7 +20,7 @@
 	}
 
 	function handleDownloadButton() {
-		const groupService = new GroupService($data_store, forbiddenPairs, day, group_cnt);
+		const groupService = new GroupService($data_store, $leader_store, forbiddenPairs, day, group_cnt);
 		const { groups, groupOfMembers } = groupService.randomGroup();
 		const errors = groupService.getGroupError(groups) as string[] | undefined;
 		if (errors && errors.length > 0) {
@@ -36,11 +35,11 @@
 </script>
 
 <Background />
-<div class="absolute top-2 right-2">
+<div class="absolute top-6 right-6">
 	<a
 		href="https://github.com/khajornritdacha/group-randomizer/tree/main?tab=readme-ov-file#group-randomizer"
 		target="_blank"
-		class="rounded-full inline-block leading-[0] font-bold text-center text-2xl bg-orange-primary hover:bg-orange-primary-darken text-white-secondary p-5"
+		class="rounded-xl inline-block leading-[0] font-bold text-center text-2xl bg-orange-primary hover:bg-orange-primary-darken text-white-secondary p-7 font-scaryHalloween"
 		>How to Use</a
 	>
 </div>
@@ -60,7 +59,7 @@
 				Random
 			</h1>
 		</div>
-		<div class="min-h-max w-[80%] z-10">
+		<div class="min-h-max w-[80%] z-10 bg-orange-200 rounded-3xl">
 			<DropMember />
 		</div>
 	</div>

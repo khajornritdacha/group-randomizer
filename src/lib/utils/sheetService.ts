@@ -4,12 +4,12 @@ import { type WorkBook, writeFile, utils, type CellObject } from 'xlsx';
 const GROUP_ASSIGN_SHEET_NAME = 'group_assign';
 const CONTROL_SHEET_NAME = 'control';
 
-export function loadFromSheet(workbook: WorkBook) {
+export function loadFromSheet(workbook: WorkBook, sheetName: string) {
 	const data: Person[] = [];
 	for (let i = 2; ; i++) {
-		if (!workbook.Sheets['database'][`A${i}`]) break;
+		if (!workbook.Sheets[sheetName][`A${i}`]) break;
 		data.push({
-			name: workbook.Sheets['database'][`A${i}`].v,
+			name: workbook.Sheets[sheetName][`A${i}`].v,
 			id: i - 1
 		});
 	}
@@ -30,9 +30,9 @@ export function handleDownload(
 		origin: 'B2'
 	});
 
-	if (!disableGenerateControlSheet) {
-		createControlSheet(out_wb, groupOfMembers.length, groupOfMembers[0].length);
-	}
+	// if (!disableGenerateControlSheet) {
+	// 	createControlSheet(out_wb, groupOfMembers.length, groupOfMembers[0].length);
+	// }
 
 	writeFile(out_wb, 'output.xlsx');
 }
