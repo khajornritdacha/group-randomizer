@@ -1,6 +1,6 @@
 <script lang="ts">
 	import DropFile from 'svelte-parts/DropFile.svelte';
-	import { groups_store, groupOfMembers_store, workbook_store, data_store } from '../store';
+	import { groups_store, groupOfMembers_store, workbook_store, data_store, forbiddenPairs_store } from '../store';
 	import { read } from 'xlsx';
 
 	import { loadResult } from '$lib/utils/sheetService';
@@ -15,6 +15,7 @@
         groups_store.set(result.groups);
         groupOfMembers_store.set(result.groupOfMembers);    
 		data_store.set(result.data);
+		forbiddenPairs_store.set(result.forbiddenPairs);
         
         console.log(result);
 	}

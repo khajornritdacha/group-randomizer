@@ -92,7 +92,8 @@ export function loadResult(workbook: WorkBook) {
 	return {
 		data: members,
 		groups: groups,
-		groupOfMembers: groupOfMembers 
+		groupOfMembers: groupOfMembers,
+		forbiddenPairs: loadForbiddenPairs(workbook)
 	}
 }
 

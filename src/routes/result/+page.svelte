@@ -3,7 +3,7 @@
 	import type { Person } from '$lib/types';;
 	import Background from '../../components/Background.svelte';
 	import DownloadButton from '../../components/DownloadButton.svelte';
-	import { groups_store, groupOfMembers_store, workbook_store, data_store } from '../../store';
+	import { groups_store, groupOfMembers_store, workbook_store, data_store, forbiddenPairs_store } from '../../store';
     import LoadResult from '../../components/LoadResult.svelte';
 
     const MAX_COL = 12;
@@ -14,8 +14,8 @@
 
     let firstMember = "", secondMember = "";
 
-    $: currentPageRows = totalPages.length > 0 ? totalPages[page] : [];
     $: totalPages = $groups_store;
+    $: currentPageRows = totalPages.length > 0 ? totalPages[page] : [];
 	
 	const setPage = (p: number) => {
         if (p >= 0 && p < totalPages.length) {
@@ -26,6 +26,48 @@
     function handleDownloadButton() {
         handleDownload($workbook_store, $groupOfMembers_store, true);
         return;
+    }
+
+    function getErrorTripleThings(day: number, group: number) {
+        let cntSection = 0, cntMale = 0, cntStatus = 0, cntSuksa = 0;
+        for (let i = 0; i < $groups_store[day][group].length; i++) {
+            if ($groups_store[day][group][i].section === "ศึกษา") {
+                cntSuksa++;
+            }
+            for (let j = i + 1; j < $groups_store[day][group].length; j++) {
+                if ($groups_store[day][group][i].status === $groups_store[day][group][j].status) {
+                    cntStatus++;
+                }
+                if ($groups_store[day][group][i].section === $groups_store[day][group][j].section) {
+                    cntSection++;
+                }
+                if ($groups_store[day][group][i].gender === "ชาย" && $groups_store[day][group][j].gender === "ชาย") {
+                    cntMale++;
+                }
+            }
+        }
+        if (cntMale >= 3) return "A";
+        if (cntStatus >= 6) return "B";
+        if (cntSection >= 3) return "C";
+        if (cntSuksa >= 2) return "D";
+        return "";
+    }
+
+    function isForbiddenPair(person1: Person, person2: Person) {
+		return $forbiddenPairs_store.some((pair) => {
+			const idx1 = pair.indexOf(person1.name);
+			const idx2 = pair.indexOf(person2.name);
+			return idx1 !== -1 && idx2 !== -1 && Math.abs(idx1 - idx2) === 1;
+		});
+	}
+
+    function hasForbiddenPairs(day: number, group: number, person: Person) {
+        for (let i = 0; i < $groups_store[day][group].length; i++) {
+            if (isForbiddenPair($groups_store[day][group][i], person)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     function IsMetTwice(groups: Person[][][]) {
@@ -49,7 +91,7 @@
 	}
 
     function trySwapMembers(member1: string, member2: string) {
-        if (member1 === "" || member2 === "") return {groups: [], error: "Please select 2 members to swap"};
+        if (member1 === "" || member2 === "") return {groups: [], groupOfMembers: [], error: "Please select 2 members to swap"};
 
         console.log($groups_store)
 
@@ -70,22 +112,29 @@
         }
 
         if (groupOfFirstMember === groupOfSecondMember) {
-            return {groups: [], error: "Members are in the same group"};
+            return {groups: [], groupOfMembers: [], error: "Members are in the same group"};
         }
 
         const groups = Array.from({ length: $groups_store.length }, () =>
             Array.from({ length: $groups_store[0].length }, () => [])
         ) as Person[][][];
+
+        const groupOfMembers = Array.from({ length: $data_store.length }, () =>
+            Array.from({ length: $groups_store.length }, () => -1)
+        );
         for (let i = 0; i < $groups_store.length; i++) {
             for (let j = 0; j < $groups_store[i].length; j++) {
                 for (let k = 0; k < $groups_store[i][j].length; k++) {
                     if (i === page && j === groupOfFirstMember && k === groupOfFirstMemberIndex) {
+                        groupOfMembers[$groups_store[i][groupOfSecondMember][groupOfSecondMemberIndex].id - 1][i] = j + 1;
                         groups[i][j].push($groups_store[i][groupOfSecondMember][groupOfSecondMemberIndex]);
                     }
                     else if (i === page && j === groupOfSecondMember && k === groupOfSecondMemberIndex) {
+                        groupOfMembers[$groups_store[i][groupOfFirstMember][groupOfFirstMemberIndex].id - 1][i] = j + 1;
                         groups[i][j].push($groups_store[i][groupOfFirstMember][groupOfFirstMemberIndex]);
                     }
                     else {
+                        groupOfMembers[$groups_store[i][j][k].id - 1][i] = j + 1;
                         groups[i][j].push($groups_store[i][j][k]);
                     }
                 }
@@ -95,9 +144,9 @@
         console.log(groups);
 
         if (IsMetTwice(groups)) {
-            return {groups: [], error: "This swap will cause 2 members to meet more than once"};
+            return {groups: [], groupOfMembers: [], error: "This swap will cause 2 members to meet more than once"};
         }
-        return {groups: groups, error: ""};
+        return {groups: groups, groupOfMembers: groupOfMembers, error: ""};
     }
 
     function handleSwapMembers() {
@@ -107,6 +156,7 @@
             return;
         }
         groups_store.set(result.groups);
+        groupOfMembers_store.set(result.groupOfMembers);
         return;
     }
 </script>
@@ -155,13 +205,13 @@
 {:else}
     <div class={`grid grid-cols-${col.toString()} gap-4 mx-12`}>
         {#each currentPageRows as group, i}
-        <div class="bg-orange-400 hover:bg-orange-primary-darken text-white-secondary transition-all py-2 px-4 rounded-xl m-2">
+        <div class={`${getErrorTripleThings(page, i) === "A" ? "bg-red-800" : getErrorTripleThings(page, i) === "B" ? "bg-red-600" : getErrorTripleThings(page, i) === "C" ? "bg-red-400" : getErrorTripleThings(page, i) === "D" ? "bg-purple-700" : "bg-orange-400"} ${getErrorTripleThings(page, i) !== "" ? "hover:bg-red-950" : "hover:bg-orange-primary-darken"} text-white-secondary transition-all py-2 px-4 rounded-xl m-2`}>
             <h3 class="text-lg font-bold mb-2 flex justify-center text-white">Group : {i + 1}</h3>
-            {#each group as memberName}
-                <li class={`text-orange-primary ${memberName.name === firstMember || memberName.name === secondMember ? "bg-orange-700 text-white" : "bg-white"} hover:bg-orange-200 border-2 border-orange-primary transition-all rounded-md py-1 pl-2`}>
-                    {memberName.name} 
+            {#each group as member}                
+                <li class={`${hasForbiddenPairs(page, i, member) ? "bg-red-500 text-white" : "text-orange-primary"} ${member.name === firstMember || member.name === secondMember ? "bg-orange-600 text-white" : "bg-white"} hover:bg-orange-200 border-2 border-orange-primary transition-all rounded-md py-1 pl-2`}>
+                    {member.name} 
                     {#if showDetail}
-                        #{memberName.year} {memberName.faculty}
+                        #{member.year} {member.faculty}
                     {/if}
                 </li>
             {/each}

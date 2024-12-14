@@ -19,6 +19,7 @@ export class GroupService {
 		this.TOTAL_GROUP = TOTAL_GROUP;
 		this.MAX_GROUP_SIZE = Math.ceil(data.length / TOTAL_GROUP);
 		this.newData = [];
+		this.leftMaxGroupSize = this.data.length - this.TOTAL_GROUP * Math.floor(this.data.length / this.TOTAL_GROUP);
 		this.leader = leader;
 	}
 
