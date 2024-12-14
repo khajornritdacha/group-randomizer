@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { data_store } from '../store';
+	import { onMount } from 'svelte';
+	import { data_store, forbiddenPairs_store } from '../store';
 
 	export let forbiddenPairs: string[][];
 
@@ -7,6 +8,9 @@
 	let cur_second = '';
 
 	let second_options: string[] = [];
+
+	$: forbiddenPairs = $forbiddenPairs_store;
+	$: console.log(forbiddenPairs, $forbiddenPairs_store);
 
 	function check_forbidden(name1: string, name2: string) {
 		// check if cur_first and cur_second are in forbiddenPairs
@@ -42,20 +46,20 @@
 	$: cur_first && change_second_input();
 </script>
 
-<div class="py-5 flex-col items-center">
-	<h1 class="pt-4 pb-5 text-4xl font-bold text-center">Forbidden Pairs</h1>
+<div class="flex-col items-center p-4 border-4 border-orange-primary-darken rounded-2xl">
+	<h1 class="py-2 text-4xl font-bold text-center">Forbidden Pairs</h1>
 	<ol class="flex flex-col justify-center">
 		{#each forbiddenPairs as pair}
-			<li class="text-xl py-1 grid grid-cols-3 justify-items-center items-center border rounded-xl mt-2">
+			<li class="text-xl py-2 grid grid-cols-3 justify-items-center items-center border-2 border-orange-primary rounded-xl mt-3">
 				<span class="px-5 text-nowrap">{pair[0]}</span>
 				<span class="px-5 text-no-wrap">{pair[1]}</span>
 				<button
-					class="bg-orange-primary hover:bg-orange-primary-darken text-white-secondary transition-all py-1 px-3 mx-2 rounded-2xl cursor-pointer font-scaryHalloween"
+					class="bg-orange-primary hover:bg-orange-primary-darken text-white-secondary text-sm transition-all px-3 py-1 mx-2 rounded-2xl cursor-pointer font-scaryHalloween"
 					on:click={() => handleRemove(pair)}>Remove</button
 				>
 			</li>
 		{/each}
-		<li class="text-xl py-1 grid grid-cols-3 justify-items-center border rounded-xl my-2">
+		<li class="text-xl py-1 grid grid-cols-3 justify-items-center border rounded-xl my-3">
 			<select
 				class="mx-2 p-2 rounded w-[90%]"
 				placeholder="name1"

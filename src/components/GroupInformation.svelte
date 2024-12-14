@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { data_store } from '../store';
+	import { data_store, groups_store } from '../store';
 
 	export let group_cnt: number;
 	export let day: number;

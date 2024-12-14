@@ -1,4 +1,5 @@
 import type { Person } from '$lib/types';
+import { Person } from 'svelte-parts/icons/octicons';
 import { type WorkBook, writeFile, utils, type CellObject } from 'xlsx';
 
 const GROUP_ASSIGN_SHEET_NAME = 'group_assign';
@@ -10,10 +11,89 @@ export function loadFromSheet(workbook: WorkBook, sheetName: string) {
 		if (!workbook.Sheets[sheetName][`A${i}`]) break;
 		data.push({
 			name: workbook.Sheets[sheetName][`A${i}`].v,
+			gender: workbook.Sheets[sheetName][`B${i}`].v,
+			faculty: workbook.Sheets[sheetName][`C${i}`].v,
+			field: workbook.Sheets[sheetName][`D${i}`].v,
+			year: workbook.Sheets[sheetName][`E${i}`].v,
+			section: workbook.Sheets[sheetName][`F${i}`].v,
+			baan: workbook.Sheets[sheetName][`G${i}`].v,
+			status: workbook.Sheets[sheetName][`H${i}`].v,
 			id: i - 1
 		});
 	}
 	return data;
+}
+
+export function loadForbiddenPairs(workbook: WorkBook) {
+	const sheetName = "forbidden_pairs";
+	const data: string[][] = [];
+	for (let i = 1; ; i++) {
+		if (!workbook.Sheets[sheetName][`A${i}`]) break;
+		const row = String(workbook.Sheets[sheetName][`A${i}`].v).split(',');
+		for (let j = 0; j < row.length; j++) {
+			for (let k = j + 1; k < row.length; k++) {
+				data.push([row[j], row[k]]);
+			}
+		}
+	}
+	console.log(data);
+	return data;
+}
+
+export function loadResult(workbook: WorkBook) {
+	const sheetName = "group_assign";
+	const sheetNameData = "database";
+	
+	let DAY = 0, TOTAL_GROUP = 0, LEN = 0;
+	const members: Person[] = [];
+	for (let i = 2; ; i++) {
+		if (!workbook.Sheets[sheetNameData][`A${i}`]) break;
+
+		LEN++;
+		members.push({
+			name: workbook.Sheets[sheetNameData][`A${i}`].v,
+			gender: workbook.Sheets[sheetNameData][`B${i}`].v,
+			faculty: workbook.Sheets[sheetNameData][`C${i}`].v,
+			field: workbook.Sheets[sheetNameData][`D${i}`].v,
+			year: workbook.Sheets[sheetNameData][`E${i}`].v,
+			section: workbook.Sheets[sheetNameData][`F${i}`].v,
+			baan: workbook.Sheets[sheetNameData][`G${i}`].v,
+			status: workbook.Sheets[sheetNameData][`H${i}`].v,
+			id: i - 1
+		});
+		for (let j = 2, startAlpha = 66; ; j++, startAlpha++) {
+			const alpha = String.fromCharCode(startAlpha);
+			if (!workbook.Sheets[sheetName][`${alpha}${i}`]) break;
+			if (i == 2) DAY++;
+			TOTAL_GROUP = Math.max(TOTAL_GROUP, Number(workbook.Sheets[sheetName][`${alpha}${i}`].v));
+		}
+	}
+
+	console.log(DAY, TOTAL_GROUP, LEN);
+
+	const groups = Array.from({ length: DAY }, () =>
+		Array.from({ length: TOTAL_GROUP }, () => [])
+	) as Person[][][];
+
+	const groupOfMembers = Array.from({ length: LEN }, () =>
+		Array.from({ length: DAY }, () => -1)
+	);
+
+	for (let i = 0; i < LEN; i++) {
+		for (let j = 0; j < DAY; j++) {
+			const alpha = String.fromCharCode(66 + j);
+			groupOfMembers[i][j] = workbook.Sheets[sheetName][`${alpha}${i + 2}`].v;
+			groups[j][groupOfMembers[i][j] - 1].push(members[i]);
+		}
+	}
+
+	console.log(groups, groupOfMembers);
+
+	return {
+		data: members,
+		groups: groups,
+		groupOfMembers: groupOfMembers 
+	}
 }
 
 export function handleDownload(

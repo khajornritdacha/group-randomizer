@@ -1,6 +1,7 @@
 import type { Person } from '$lib/types';
 
 export class GroupService {
+	readonly C: number = 91;
 	readonly data: Person[];
 	readonly forbiddenPairs: string[][];
 	readonly DAY: number;
@@ -18,31 +19,95 @@ export class GroupService {
 		this.TOTAL_GROUP = TOTAL_GROUP;
 		this.MAX_GROUP_SIZE = Math.ceil(data.length / TOTAL_GROUP);
 		this.newData = [];
-		this.leftMaxGroupSize =
-			this.data.length - this.TOTAL_GROUP * Math.floor(this.data.length / this.TOTAL_GROUP);
 		this.leader = leader;
 	}
 
+	findBestGroup() {
+		let bestGroup = this.randomGroup();
+		let bestCost = this.calculateCost(bestGroup.groups);
+		for (let i = 0; i < 10000; i++) {
+			const currentGroup = this.randomGroup();
+			const error = this.getGroupError(currentGroup.groups);
+			if (error && error.length > 0) continue;
+			
+			const currentCost = this.calculateCost(currentGroup.groups);
+			if (bestCost > currentCost) {
+				bestCost = currentCost;
+				bestGroup = currentGroup;
+			}
+		}
+		return bestGroup;
+	}
+
+	calculateCost(groups: Person[][][]) {
+		let cost = 0;
+		for (let d = 0; d < groups.length; d++) {
+			for (let g = 0; g < groups[d].length; g++) {
+				for (let i = 0; i < groups[d][g].length; i++) {
+					for (let j = i + 1; j < groups[d][g].length; j++) {
+						// do something
+						if (this.isForbiddenPair(groups[d][g][i], groups[d][g][j])) {
+							const person1 = groups[d][g][i];
+							const person2 = groups[d][g][j];
+							const id1 = this.forbiddenPairs.indexOf([person1.name, person2.name]);
+							const id2 = this.forbiddenPairs.indexOf([person2.name, person1.name]);
+
+							if (id1 !== -1) {
+								cost += Math.pow(this.C + this.forbiddenPairs.length - id1, 7);
+							}
+							else {
+								cost += Math.pow(this.C + this.forbiddenPairs.length - id2, 7);
+							}
+						}
+						else if (groups[d][g][i].status === groups[d][g][j].status) {
+							cost += Math.pow(this.C, 6);
+						}
+						else if (groups[d][g][i].gender === groups[d][g][j].gender) {
+							cost += Math.pow(this.C, 5);
+						}
+						else if (groups[d][g][i].baan === groups[d][g][j].baan) {
+							cost += Math.pow(this.C, 4);
+						}
+						else if (groups[d][g][i].field === groups[d][g][j].field) {
+							cost += Math.pow(this.C, 3);
+						}
+						else if (groups[d][g][i].faculty === groups[d][g][j].faculty) {
+							cost += Math.pow(this.C, 2);
+						}
+						else if (groups[d][g][i].section === groups[d][g][j].section) {
+							cost += Math.pow(this.C, 1);
+						}
+					}
+				}
+			}
+		}
+		return cost;
+	}
+
 	randomGroup() {
+		this.leftMaxGroupSize =
+			this.data.length - this.TOTAL_GROUP * Math.floor(this.data.length / this.TOTAL_GROUP);
+		if (this.leftMaxGroupSize === 0) this.leftMaxGroupSize = this.TOTAL_GROUP;
+
 		const basis = this.generateBasisGroup();
 
-		const groups = Array.from({ length: this.TOTAL_GROUP }, () =>
-			Array.from({ length: this.DAY }, () => [])
+		const groups = Array.from({ length: this.DAY }, () =>
+			Array.from({ length: this.TOTAL_GROUP }, () => [])
 		) as Person[][][];
 
 		const groupOfMembers = Array.from({ length: this.data.length }, () =>
 			Array.from({ length: this.DAY }, () => -1)
 		);
 
-		for (let g = 0; g < this.TOTAL_GROUP; g++) {
-			basis[g].forEach((person, idx) => {
-				for (let d = 0; d < this.DAY; d++) {
+		for (let d = 0; d < this.DAY; d++) {
+			for (let g = 0; g < this.TOTAL_GROUP; g++) {
+				basis[g].forEach((person, idx) => {
 					// increase actual DAY by 1
 					const group_id = this.calculateGroupId(g, idx, d + 1);
-					groups[group_id - 1][d].push(person);
+					groups[d][group_id - 1].push(person);
 					groupOfMembers[person.id - 1][d] = group_id;
-				}
-			});
+				});
+			}
 		}
 
 		return {
@@ -56,10 +121,10 @@ export class GroupService {
 		const basis = Array.from({ length: this.TOTAL_GROUP }, () => []) as Person[][];
 
 		// insert leader
-		this.insertLeader(basis);
+		if (this.leader.length > 0) this.insertLeader(basis);
 
 		// insert all forbidden pairs
-		if (this.leader.length > 0) this.insertForbiddenPairs(basis);
+		this.insertForbiddenPairs(basis);
 
 		// fill leftover slots with random people
 		this.fillWithRandom(basis);
@@ -79,7 +144,10 @@ export class GroupService {
 	insertLeader(basis: Person[][]) {
 		for (let g = 0; g < basis.length; g++) {
 			const leader = this.getRandomPerson(this.leader);
-			const person1 = this.newData.find((person) => person.name === leader.name);
+			const person1 = this.newData.find((person) =>
+				person.name === leader.name &&
+				person.faculty === leader.faculty &&
+				person.year === leader.year);
 			if (person1) {
 				basis[g].push(person1);
 				this.newData = this.newData.filter((p) => p.id !== person1.id);
@@ -161,15 +229,15 @@ export class GroupService {
 		const meet_cnt = Array.from({ length: this.data.length }, () =>
 			Array.from({ length: this.data.length }, () => 0)
 		);
-		for (let g = 0; g < groups.length; g++) {
-			for (let d = 0; d < groups[g].length; d++) {
-				for (let i = 0; i < groups[g][d].length; i++) {
-					for (let j = i + 1; j < groups[g][d].length; j++) {
-						meet_cnt[groups[g][d][i].id - 1][groups[g][d][j].id - 1]++;
-						meet_cnt[groups[g][d][j].id - 1][groups[g][d][i].id - 1]++;
-						if (meet_cnt[groups[g][d][i].id - 1][groups[g][d][j].id - 1] > 1) {
+		for (let d = 0; d < groups.length; d++) {
+			for (let g = 0; g < groups[d].length; g++) {
+				for (let i = 0; i < groups[d][g].length; i++) {
+					for (let j = i + 1; j < groups[d][g].length; j++) {
+						meet_cnt[groups[d][g][i].id - 1][groups[d][g][j].id - 1]++;
+						meet_cnt[groups[d][g][j].id - 1][groups[d][g][i].id - 1]++;
+						if (meet_cnt[groups[d][g][i].id - 1][groups[d][g][j].id - 1] > 1) {
 							errors.push(
-								`Some pairs meet twice: ${groups[g][d][i].name} and ${groups[g][d][j].name}`
+								`Some pairs meet twice: ${groups[d][g][i].name} and ${groups[d][g][j].name}`
 							);
 							return;
 						}
@@ -180,11 +248,11 @@ export class GroupService {
 	}
 
 	getSizeError(errors: string[], groups: Person[][][]) {
-		for (let g = 0; g < groups.length; g++) {
-			for (let d = 0; d < groups[g].length; d++) {
+		for (let d = 0; d < groups.length; d++) {
+			for (let g = 0; g < groups[d].length; g++) {
 				if (
-					groups[g][d].length < this.MAX_GROUP_SIZE - 1 ||
-					groups[g][d].length > this.MAX_GROUP_SIZE
+					groups[d][g].length < this.MAX_GROUP_SIZE - 1 ||
+					groups[d][g].length > this.MAX_GROUP_SIZE
 				) {
 					errors.push(`Some group is too small`);
 					return;
@@ -194,11 +262,11 @@ export class GroupService {
 	}
 
 	getForbiddenPairError(errors: string[], groups: Person[][][]) {
-		for (let g = 0; g < groups.length; g++) {
-			for (let d = 0; d < groups[g].length; d++) {
-				for (let i = 0; i < groups[g][d].length; i++) {
-					for (let j = i + 1; j < groups[g][d].length; j++) {
-						if (this.isForbiddenPair(groups[g][d][i], groups[g][d][j])) {
+		for (let d = 0; d < groups.length; d++) {
+			for (let g = 0; g < groups[d].length; g++) {
+				for (let i = 0; i < groups[d][g].length; i++) {
+					for (let j = i + 1; j < groups[d][g].length; j++) {
+						if (this.isForbiddenPair(groups[d][g][i], groups[d][g][j])) {
 							errors.push(`Some group has forbidden pair`);
 							return;
 						}

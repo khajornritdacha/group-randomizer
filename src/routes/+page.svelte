@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	import { GroupService } from '$lib/utils/groupService';
 	import { handleDownload } from '$lib/utils/sheetService';
 	import Background from '../components/Background.svelte';
@@ -6,7 +7,7 @@
 	import DropMember from '../components/DropMember.svelte';
 	import ForbiddenPair from '../components/ForbiddenPair.svelte';
 	import GroupInformation from '../components/GroupInformation.svelte';
-	import { data_store, leader_store, workbook_store } from '../store';
+	import { data_store, groupOfMembers_store, groups_store, leader_store, workbook_store } from '../store';
 
 	let group_cnt = 0;
 	let day = 1;
@@ -21,7 +22,7 @@
 
 	function handleDownloadButton() {
 		const groupService = new GroupService($data_store, $leader_store, forbiddenPairs, day, group_cnt);
-		const { groups, groupOfMembers } = groupService.randomGroup();
+		const { groups, groupOfMembers } = groupService.findBestGroup();
 		const errors = groupService.getGroupError(groups) as string[] | undefined;
 		if (errors && errors.length > 0) {
 			console.warn(errors);
@@ -29,17 +30,27 @@
 			showModal(errors || []);
 			// return;
 		}
-		handleDownload($workbook_store, groupOfMembers, disableGenerateControlSheet);
+		groups_store.set(groups);
+		groupOfMembers_store.set(groupOfMembers);
+		// handleDownload($workbook_store, groupOfMembers, disableGenerateControlSheet);
+		goto('/result');
 		return;
 	}
 </script>
 
 <Background />
-<div class="absolute top-6 right-6">
+<div class="absolute top-4 right-48">
+	<a
+		href="/result"
+		class="rounded-xl inline-block leading-[0] font-bold text-center text-lg bg-orange-primary hover:bg-orange-primary-darken text-white-secondary p-5 font-scaryHalloween"
+		>Result</a
+	>
+</div>
+<div class="absolute top-4 right-4">
 	<a
 		href="https://github.com/khajornritdacha/group-randomizer/tree/main?tab=readme-ov-file#group-randomizer"
 		target="_blank"
-		class="rounded-xl inline-block leading-[0] font-bold text-center text-2xl bg-orange-primary hover:bg-orange-primary-darken text-white-secondary p-7 font-scaryHalloween"
+		class="rounded-xl inline-block leading-[0] font-bold text-center text-lg bg-orange-primary hover:bg-orange-primary-darken text-white-secondary p-5 font-scaryHalloween"
 		>How to Use</a
 	>
 </div>
@@ -76,10 +87,12 @@
 				bind:disableGenerateControlSheet
 				bind:enableForbiddenPairs
 			/>
-			<DownloadButton on:click={handleDownloadButton} {group_cnt} />
 		</div>
 		{#if enableForbiddenPairs}
 			<ForbiddenPair {forbiddenPairs} />
 		{/if}
+		<div class={`flex flex-col justify-between gap-3 ${enableForbiddenPairs && 'py-5'}`}>
+			<DownloadButton on:click={handleDownloadButton} {group_cnt} />
+		</div>
 	</div>
 </div>
