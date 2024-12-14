@@ -208,7 +208,7 @@
         <div class={`${getErrorTripleThings(page, i) === "A" ? "bg-red-800" : getErrorTripleThings(page, i) === "B" ? "bg-red-600" : getErrorTripleThings(page, i) === "C" ? "bg-red-400" : getErrorTripleThings(page, i) === "D" ? "bg-purple-700" : "bg-orange-400"} ${getErrorTripleThings(page, i) !== "" ? "hover:bg-red-950" : "hover:bg-orange-primary-darken"} text-white-secondary transition-all py-2 px-4 rounded-xl m-2`}>
             <h3 class="text-lg font-bold mb-2 flex justify-center text-white">Group : {i + 1}</h3>
             {#each group as member}                
-                <li class={`${hasForbiddenPairs(page, i, member) ? "bg-red-500 text-white" : "text-orange-primary"} ${member.name === firstMember || member.name === secondMember ? "bg-orange-600 text-white" : "bg-white"} hover:bg-orange-200 border-2 border-orange-primary transition-all rounded-md py-1 pl-2`}>
+                <li class={`${member.name === firstMember || member.name === secondMember ? "bg-orange-600 text-white" : hasForbiddenPairs(page, i, member) ? "bg-red-500 text-white " : "text-orange-primary bg-white"} hover:bg-orange-200 border-2 border-orange-primary transition-all rounded-md py-1 pl-2`}>
                     {member.name} 
                     {#if showDetail}
                         #{member.year} {member.faculty}
