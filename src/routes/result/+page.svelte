@@ -29,7 +29,7 @@
     }
 
     function getErrorTripleThings(day: number, group: number) {
-        let cntSection = 0, cntMale = 0, cntStatus = 0, cntSuksa = 0;
+        let cntSection = 0, cntMale = 0, cntStatus = 0, cntSuksa = 0, cntBaan = 0;
         for (let i = 0; i < $groups_store[day][group].length; i++) {
             if ($groups_store[day][group][i].section === "ศึกษา") {
                 cntSuksa++;
@@ -44,12 +44,16 @@
                 if ($groups_store[day][group][i].gender === "ชาย" && $groups_store[day][group][j].gender === "ชาย") {
                     cntMale++;
                 }
+                if ($groups_store[day][group][i].baan === $groups_store[day][group][j].baan) {
+                    cntBaan++;
+                }
             }
         }
         if (cntMale >= 3) return "A";
         if (cntStatus >= 6) return "B";
-        if (cntSection >= 3) return "C";
-        if (cntSuksa >= 2) return "D";
+        if (cntBaan >= 3) return "C";
+        if (cntSection >= 3) return "D";
+        if (cntSuksa >= 2) return "E";
         return "";
     }
 
@@ -111,6 +115,12 @@
             }
         }
 
+        if (groupOfFirstMember === -1) {
+            return {groups: [], groupOfMembers: [], error: "Member 1 is not in any group"};
+        }
+        if (groupOfSecondMember === -1) {
+            return {groups: [], groupOfMembers: [], error: "Member 2 is not in any group"};
+        }
         if (groupOfFirstMember === groupOfSecondMember) {
             return {groups: [], groupOfMembers: [], error: "Members are in the same group"};
         }
@@ -205,15 +215,15 @@
 {:else}
     <div class={`grid grid-cols-${col.toString()} gap-4 mx-12`}>
         {#each currentPageRows as group, i}
-        <div class={`${getErrorTripleThings(page, i) === "A" ? "bg-red-800" : getErrorTripleThings(page, i) === "B" ? "bg-red-600" : getErrorTripleThings(page, i) === "C" ? "bg-red-400" : getErrorTripleThings(page, i) === "D" ? "bg-purple-700" : "bg-orange-400"} ${getErrorTripleThings(page, i) !== "" ? "hover:bg-red-950" : "hover:bg-orange-primary-darken"} text-white-secondary transition-all py-2 px-4 rounded-xl m-2`}>
+        <div class={`bg-orange-400 ${getErrorTripleThings(page, i) !== "" ? "hover:bg-red-950" : "hover:bg-orange-primary-darken"} text-white-secondary transition-all py-2 px-4 rounded-xl m-2`}>
             <h3 class="text-lg font-bold mb-2 flex justify-center text-white">Group : {i + 1}</h3>
             {#each group as member}                
-                <li class={`${member.name === firstMember || member.name === secondMember ? "bg-orange-600 text-white" : hasForbiddenPairs(page, i, member) ? "bg-red-500 text-white " : "text-orange-primary bg-white"} hover:bg-orange-200 border-2 border-orange-primary transition-all rounded-md py-1 pl-2`}>
+                <p class={`${member.name === firstMember || member.name === secondMember ? "bg-orange-600 text-white" : hasForbiddenPairs(page, i, member) && false ? "bg-red-500 text-white " : "text-orange-primary bg-white"} text-center font-bold hover:bg-orange-200 border-2 border-orange-primary transition-all rounded-md py-1`}>
                     {member.name} 
                     {#if showDetail}
                         #{member.year} {member.faculty}
                     {/if}
-                </li>
+                </p>
             {/each}
         </div>
         {/each}

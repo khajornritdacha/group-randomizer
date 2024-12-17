@@ -61,10 +61,13 @@ export function loadResult(workbook: WorkBook) {
 			status: workbook.Sheets[sheetNameData][`H${i}`].v,
 			id: i - 1
 		});
-		for (let j = 2, startAlpha = 66; ; j++, startAlpha++) {
+		for (let j = 2, startAlpha = 66; ; j++, startAlpha++) {	
 			const alpha = String.fromCharCode(startAlpha);
 			if (!workbook.Sheets[sheetName][`${alpha}${i}`]) break;
+
 			if (i == 2) DAY++;
+			if (workbook.Sheets[sheetName][`${alpha}${i}`].v === 0) continue;
+			
 			TOTAL_GROUP = Math.max(TOTAL_GROUP, Number(workbook.Sheets[sheetName][`${alpha}${i}`].v));
 		}
 	}
@@ -83,6 +86,9 @@ export function loadResult(workbook: WorkBook) {
 		for (let j = 0; j < DAY; j++) {
 			const alpha = String.fromCharCode(66 + j);
 			groupOfMembers[i][j] = workbook.Sheets[sheetName][`${alpha}${i + 2}`].v;
+			
+			if (workbook.Sheets[sheetName][`${alpha}${i + 2}`].v === 0) continue;
+
 			groups[j][groupOfMembers[i][j] - 1].push(members[i]);
 		}
 	}
