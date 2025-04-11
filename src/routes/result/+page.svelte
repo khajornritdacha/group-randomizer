@@ -52,7 +52,7 @@
         if (cntMale >= 3) return "A";
         if (cntStatus >= 6) return "B";
         if (cntBaan >= 3) return "C";
-        if (cntSection >= 3) return "D";
+        if (cntSection >= 3 && cntSuksa <= 1) return "D";
         if (cntSuksa >= 2) return "E";
         return "";
     }
@@ -215,10 +215,10 @@
 {:else}
     <div class={`grid grid-cols-${col.toString()} gap-4 mx-12`}>
         {#each currentPageRows as group, i}
-        <div class={`bg-orange-400 ${getErrorTripleThings(page, i) !== "" ? "hover:bg-red-950" : "hover:bg-orange-primary-darken"} text-white-secondary transition-all py-2 px-4 rounded-xl m-2`}>
+        <div class={`${getErrorTripleThings(page, i) === "A" ? "bg-red-800" : getErrorTripleThings(page, i) === "B" ? "bg-red-600" : getErrorTripleThings(page, i) === "C" ? "bg-green-500" : getErrorTripleThings(page, i) === "D" ? "bg-red-400" : getErrorTripleThings(page, i) === "E" ? "bg-purple-400" : "bg-orange-primary"} bg-orange-400 ${getErrorTripleThings(page, i) !== "" ? "hover:bg-red-950" : "hover:bg-orange-primary-darken"} text-white-secondary transition-all py-2 px-4 rounded-xl m-2`}>
             <h3 class="text-lg font-bold mb-2 flex justify-center text-white">Group : {i + 1}</h3>
             {#each group as member}                
-                <p class={`${member.name === firstMember || member.name === secondMember ? "bg-orange-600 text-white" : hasForbiddenPairs(page, i, member) && false ? "bg-red-500 text-white " : "text-orange-primary bg-white"} text-center font-bold hover:bg-orange-200 border-2 border-orange-primary transition-all rounded-md py-1`}>
+                <p class={`${member.name === firstMember || member.name === secondMember ? "bg-orange-600 text-white" : hasForbiddenPairs(page, i, member) ? "bg-red-500 text-white " : "text-orange-primary bg-white"} text-center font-bold hover:bg-orange-200 border-2 border-orange-primary transition-all rounded-md py-1`}>
                     {member.name} 
                     {#if showDetail}
                         #{member.year} {member.faculty}
