@@ -1,5 +1,4 @@
 import type { Person } from '$lib/types';
-import { Person } from 'svelte-parts/icons/octicons';
 import { type WorkBook, writeFile, utils, type CellObject } from 'xlsx';
 
 const GROUP_ASSIGN_SHEET_NAME = 'group_assign';
@@ -25,26 +24,28 @@ export function loadFromSheet(workbook: WorkBook, sheetName: string) {
 }
 
 export function loadForbiddenPairs(workbook: WorkBook) {
-	const sheetName = "forbidden_pairs";
+	const sheetName = 'forbidden_pairs';
 	const data: string[][] = [];
 	for (let i = 1; ; i++) {
 		if (!workbook.Sheets[sheetName][`A${i}`]) break;
 		const row = String(workbook.Sheets[sheetName][`A${i}`].v).split(',');
 		for (let j = 0; j < row.length; j++) {
 			for (let k = j + 1; k < row.length; k++) {
-				data.push([row[j], row[k]]);
+				data.push([row[j].trim(), row[k].trim()]);
 			}
 		}
 	}
-	console.log(data);
+	console.log({ forbidden_pairs: data });
 	return data;
 }
 
 export function loadResult(workbook: WorkBook) {
-	const sheetName = "group_assign";
-	const sheetNameData = "database";
-	
-	let DAY = 0, TOTAL_GROUP = 0, LEN = 0;
+	const sheetName = 'group_assign';
+	const sheetNameData = 'database';
+
+	let DAY = 0,
+		TOTAL_GROUP = 0,
+		LEN = 0;
 	const members: Person[] = [];
 	for (let i = 2; ; i++) {
 		if (!workbook.Sheets[sheetNameData][`A${i}`]) break;
@@ -61,46 +62,40 @@ export function loadResult(workbook: WorkBook) {
 			status: workbook.Sheets[sheetNameData][`H${i}`].v,
 			id: i - 1
 		});
-		for (let j = 2, startAlpha = 66; ; j++, startAlpha++) {	
+		for (let j = 2, startAlpha = 66; ; j++, startAlpha++) {
 			const alpha = String.fromCharCode(startAlpha);
 			if (!workbook.Sheets[sheetName][`${alpha}${i}`]) break;
 
 			if (i == 2) DAY++;
 			if (workbook.Sheets[sheetName][`${alpha}${i}`].v === 0) continue;
-			
+
 			TOTAL_GROUP = Math.max(TOTAL_GROUP, Number(workbook.Sheets[sheetName][`${alpha}${i}`].v));
 		}
 	}
-
-	console.log(DAY, TOTAL_GROUP, LEN);
 
 	const groups = Array.from({ length: DAY }, () =>
 		Array.from({ length: TOTAL_GROUP }, () => [])
 	) as Person[][][];
 
-	const groupOfMembers = Array.from({ length: LEN }, () =>
-		Array.from({ length: DAY }, () => -1)
-	);
+	const groupOfMembers = Array.from({ length: LEN }, () => Array.from({ length: DAY }, () => -1));
 
 	for (let i = 0; i < LEN; i++) {
 		for (let j = 0; j < DAY; j++) {
 			const alpha = String.fromCharCode(66 + j);
 			groupOfMembers[i][j] = workbook.Sheets[sheetName][`${alpha}${i + 2}`].v;
-			
+
 			if (workbook.Sheets[sheetName][`${alpha}${i + 2}`].v === 0) continue;
 
 			groups[j][groupOfMembers[i][j] - 1].push(members[i]);
 		}
 	}
 
-	console.log(groups, groupOfMembers);
-
 	return {
 		data: members,
 		groups: groups,
 		groupOfMembers: groupOfMembers,
 		forbiddenPairs: loadForbiddenPairs(workbook)
-	}
+	};
 }
 
 export function handleDownload(

@@ -10,7 +10,6 @@
 	let second_options: string[] = [];
 
 	$: forbiddenPairs = $forbiddenPairs_store;
-	$: console.log(forbiddenPairs, $forbiddenPairs_store);
 
 	function check_forbidden(name1: string, name2: string) {
 		// check if cur_first and cur_second are in forbiddenPairs
@@ -50,7 +49,9 @@
 	<h1 class="py-2 text-4xl font-bold text-center">Forbidden Pairs</h1>
 	<ol class="flex flex-col justify-center">
 		{#each forbiddenPairs as pair}
-			<li class="text-xl py-2 grid grid-cols-3 justify-items-center items-center border-2 border-orange-primary rounded-xl mt-3">
+			<li
+				class="text-xl py-2 grid grid-cols-3 justify-items-center items-center border-2 border-orange-primary rounded-xl mt-3"
+			>
 				<span class="px-5 text-nowrap">{pair[0]}</span>
 				<span class="px-5 text-no-wrap">{pair[1]}</span>
 				<button
