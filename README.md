@@ -19,9 +19,18 @@ A group randomizer for [Lohit Club](https://www.instagram.com/lohitclub.chula?ut
 2. Select the number of groups and days.
    - The number of groups are mandated to be prime numbers due to Technical conditions.
    - The number of days are any integer from 1 to (the number of groups - 1). i.e. If the number of group is 13, then the maximum number of days is 12.
-3. Checkboxes have 2 options:
-   - **Download minimal version** - check this to download only the minimal version of the randomized groups. (Does not contain `control` sheet)
-   - **Enable Forbidden Pairs** - check this to add forbidden pairs to the randomized groups. [(See below for more information)](#forbidden-pairs)
+3. Checkbox has an option:
+<!-- 3. Checkboxes have two options: -->
+   <!-- - **Download minimal version** - check this to download only the minimal version of the randomized groups. (Does not contain `control` sheet) -->
+- **Enable Forbidden Pairs** - check this to add forbidden pairs to the randomized groups. [(See below for more information)](#forbidden-pairs)
+4. Click the `Generate` button, this web will be navigated to the `result` page to see the random groups.
+5. On the result page:  
+    - The top right number input box can be set to change the number of groups shown for each row.  
+    - Checkbox `Show Details` shows the members' details except for their names.  
+    - The days are separated into the pagination.  
+    - In case we want to swap any two members (from different groups on the same day), select `1st member` and then select `2nd member` (the system will show only swappable members with the first member), and click `Swap` to swap those two members. The swappable pairs can be seen from the `Show swappable pairs` button.  
+    - Click `Generate` to download the result file (.xlsx file).
+6. If we already have a result and want to adjust the groups, go to the `result page` and upload the result file (.xlsx file) to continue adjusting the groups before downloading again.
 
 ## Forbidden Pairs
 
