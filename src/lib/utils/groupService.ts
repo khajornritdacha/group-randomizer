@@ -27,6 +27,26 @@ export class GroupService {
 		this.leftMaxGroupSize = this.data.length - this.TOTAL_GROUP * Math.floor(this.data.length / this.TOTAL_GROUP);
 		this.leader = leader;
 		this.forbiddenSet = new Set<string>();
+
+		let rest = this.data.length % this.TOTAL_GROUP;
+		let dataSize = this.data.length;
+
+		if (rest > 0) {
+			for (let i = dataSize + 1; i < dataSize + this.TOTAL_GROUP - rest + 1; i++) {
+				console.log("N e wwwwwwwwwwwwwwww")
+				this.data.push({
+					name: '-',
+					gender: '-',
+					faculty: '-',
+					field: '-',
+					year: '-',
+					section: '-',
+					baan: '-',
+					status: '-',
+					id: i
+				});
+			}
+		}
 	}
 
 	randomGroup() {
@@ -122,6 +142,7 @@ export class GroupService {
 				let countSuksa = 0;
 				let countMale = 0;
 				let countNew = 0;
+				let conutMiss = 0;
 				for (let i = 0; i < sorted.length; i++) {
 					for (let j = i + 1; j < sorted.length; j++) {
 						const u = sorted[i];
@@ -130,6 +151,7 @@ export class GroupService {
 						if (meet.has(key)) cnt++;
 						else meet.add(key);
 						if (this.forbiddenSet.has(key)) cnt++;
+						if (u.name === '-') conutMiss++;
 						if (u.status == v.status) {
 							if (u.status === 'ใหม่') countNew++;
 							sameStatus++;
@@ -166,6 +188,8 @@ export class GroupService {
 				if(countMale >= 3) inva += 6;
 				if(countSuksa >= 1) ack = this.TOTAL_GROUP;
 
+				if(conutMiss >= 2) ack = this.TOTAL_GROUP;
+
 				if(inva > 5) ack++;
 				cost += inva;
 			}
@@ -194,8 +218,9 @@ export class GroupService {
 
 	generateGroup(): [Schedule, number] {
 		this.newData = this.data.map((person: Person) => ({ ...person }));
+
 		if (this.TOTAL_STAFF <= 0 || this.TOTAL_GROUP <= 0 || this.DAY <= 0) throw new Error("Invalid input");
-		if (this.TOTAL_STAFF < this.TOTAL_GROUP || this.TOTAL_STAFF % this.TOTAL_GROUP !== 0) throw new Error("total staff must be divisible by total group");
+		if (this.TOTAL_STAFF < this.TOTAL_GROUP) throw new Error("total staff less than total group");
 
 		if ((this.MAX_GROUP_SIZE - 1) * this.DAY >= this.TOTAL_STAFF) throw new Error("Too many days for the given group size");
 
