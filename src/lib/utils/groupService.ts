@@ -69,13 +69,16 @@ export class GroupService {
 		if (cost == -1) cost = 1e9;
 
 		// generate best result
-		for(let i = 0; i < 2; i++) {
-			console.log(`<---------- / Process ${i} / ---------->`);
-			const [curBasis, curCost] = this.generateGroup();
-			if (curCost == -1) continue;
-			if (curCost < cost) {
-				cost = curCost;
-				basis = curBasis;
+		// -2 mean very bad input (cant be generated) so just stop the process
+		if (cost != -2) {
+			for(let i = 0; i < 2; i++) {
+				console.log(`<---------- / Process ${i} / ---------->`);
+				const [curBasis, curCost] = this.generateGroup();
+				if (curCost == -1) continue;
+				if (curCost < cost) {
+					cost = curCost;
+					basis = curBasis;
+				}
 			}
 		}
 
@@ -239,7 +242,8 @@ export class GroupService {
 				epoch++;
 				if (epoch == 4) {
 					console.log("\n---- Unsuccessfully Generated :( ----\n");
-					curCost = -1;
+					if (curScore >= this.DAY) curCost = -2;
+					else curCost = -1;
 					break;
 				}
 				console.log(`---------- [ Epoch ${epoch} ] ----------`);
