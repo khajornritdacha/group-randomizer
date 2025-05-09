@@ -21,6 +21,7 @@
 		groups_store.set(result.groups);
 		groupOfMembers_store.set(result.groupOfMembers);
 		data_store.set(result.data);
+		console.log({ NowforbiddenPairs : result.forbiddenPairs });
 		forbiddenPairs_store.set(result.forbiddenPairs);
 	}
 </script>
