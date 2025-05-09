@@ -89,7 +89,7 @@
 			/>
 		</div>
 		{#if enableForbiddenPairs}
-			<ForbiddenPair {forbiddenPairs} />
+			<ForbiddenPair bind:forbiddenPairs />
 		{/if}
 		<div class={`flex flex-col justify-between gap-3 ${enableForbiddenPairs && 'py-5'}`}>
 			<DownloadButton on:click={handleDownloadButton} {group_cnt} />

@@ -20,16 +20,14 @@
 		/>
 
 		<label class="py-3 text-xl flex font-bold" for="n_group">Number of groups :</label>
-		<select
+		<input
+			type="number"
 			bind:value={group_cnt}
 			disabled={!$data_store.length}
+			min="1"
 			class="p-2 ml-2 rounded grow disabled: bg-gray-100"
 			id="n_group"
-		>
-			{#each PRIMES as prime}
-				<option value={prime}>{prime}</option>
-			{/each}
-		</select>
+		/>
 
 		<label class="py-3 text-xl flex font-bold" for="n_day">Number of days :</label>
 		<input
