@@ -142,7 +142,7 @@ export class GroupService {
 				let countSuksa = 0;
 				let countMale = 0;
 				let countNew = 0;
-				let conutMiss = 0;
+				let conutGhost = 0;
 				for (let i = 0; i < sorted.length; i++) {
 					for (let j = i + 1; j < sorted.length; j++) {
 						const u = sorted[i];
@@ -151,7 +151,7 @@ export class GroupService {
 						if (meet.has(key)) cnt++;
 						else meet.add(key);
 						if (this.forbiddenSet.has(key)) cnt++;
-						if (u.name === '-') conutMiss++;
+						if (u.name === '-') conutGhost++;
 						if (u.status == v.status) {
 							if (u.status === 'ใหม่') countNew++;
 							sameStatus++;
@@ -188,7 +188,7 @@ export class GroupService {
 				if(countMale >= 3) inva += 6;
 				if(countSuksa >= 1) ack = this.TOTAL_GROUP;
 
-				if(conutMiss >= 2) ack = this.TOTAL_GROUP;
+				if(conutGhost >= 1) ack = this.TOTAL_GROUP;
 
 				if(inva > 5) ack++;
 				cost += inva;
