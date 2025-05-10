@@ -3,6 +3,7 @@ import type { Person, Schedule, Day, Group } from '$lib/types';
 export class GroupService {
 	readonly BATCH_SIZE: number = 1000;
 	readonly ITER: number = 25;
+	readonly PROCESS_RUN: number = 3;
 	readonly C: number = 91;
 	readonly data: Person[];
 	readonly forbiddenPairs: string[][];
@@ -71,7 +72,7 @@ export class GroupService {
 		// generate best result
 		// -2 mean very bad input (cant be generated) so just stop the process
 		if (cost != -2) {
-			for(let i = 0; i < 2; i++) {
+			for(let i = 0; i < this.PROCESS_RUN - 1; i++) {
 				console.log(`<---------- / Process ${i} / ---------->`);
 				const [curBasis, curCost] = this.generateGroup();
 				if (curCost == -1) continue;
