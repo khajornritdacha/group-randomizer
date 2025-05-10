@@ -22,7 +22,7 @@
 
 	function handleDownloadButton() {
 		const groupService = new GroupService($data_store, $leader_store, forbiddenPairs, day, group_cnt);
-		const { groups, groupOfMembers } = groupService.findBestGroup();
+		const { groups, groupOfMembers } = groupService.randomGroup();
 		const errors = groupService.getGroupError(groups) as string[] | undefined;
 		if (errors && errors.length > 0) {
 			console.warn(errors);
@@ -89,7 +89,7 @@
 			/>
 		</div>
 		{#if enableForbiddenPairs}
-			<ForbiddenPair {forbiddenPairs} />
+			<ForbiddenPair bind:forbiddenPairs />
 		{/if}
 		<div class={`flex flex-col justify-between gap-3 ${enableForbiddenPairs && 'py-5'}`}>
 			<DownloadButton on:click={handleDownloadButton} {group_cnt} />

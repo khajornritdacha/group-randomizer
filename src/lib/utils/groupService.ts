@@ -1,12 +1,17 @@
-import type { Person } from '$lib/types';
+import type { Person, Schedule, Day, Group } from '$lib/types';
 
 export class GroupService {
+	readonly BATCH_SIZE: number = 1000;
+	readonly ITER: number = 25;
+	readonly PROCESS_RUN: number = 3;
 	readonly C: number = 91;
 	readonly data: Person[];
 	readonly forbiddenPairs: string[][];
 	readonly DAY: number;
 	readonly TOTAL_GROUP: number;
+	readonly TOTAL_STAFF: number;
 	readonly MAX_GROUP_SIZE: number;
+	forbiddenSet: Set<string>;
 	leader: Person[];
 	newData: Person[];
 	leftMaxGroupSize: number; // Count number of groups that can have maximum group size
@@ -17,80 +22,68 @@ export class GroupService {
 		this.forbiddenPairs = forbiddenPairs;
 		this.DAY = DAY;
 		this.TOTAL_GROUP = TOTAL_GROUP;
+		this.TOTAL_STAFF = data.length;
 		this.MAX_GROUP_SIZE = Math.ceil(data.length / TOTAL_GROUP);
 		this.newData = [];
 		this.leftMaxGroupSize = this.data.length - this.TOTAL_GROUP * Math.floor(this.data.length / this.TOTAL_GROUP);
 		this.leader = leader;
-	}
+		this.forbiddenSet = new Set<string>();
 
-	findBestGroup() {
-		let bestGroup = this.randomGroup();
-		let bestCost = this.calculateCost(bestGroup.groups);
-		for (let i = 0; i < 10000; i++) {
-			const currentGroup = this.randomGroup();
-			const error = this.getGroupError(currentGroup.groups);
-			if (error && error.length > 0) continue;
-			
-			const currentCost = this.calculateCost(currentGroup.groups);
-			if (bestCost > currentCost) {
-				bestCost = currentCost;
-				bestGroup = currentGroup;
+		let rest = this.data.length % this.TOTAL_GROUP;
+		let dataSize = this.data.length;
+
+		if (rest > 0) {
+			for (let i = dataSize + 1; i < dataSize + this.TOTAL_GROUP - rest + 1; i++) {
+				console.log("N e wwwwwwwwwwwwwwww")
+				this.data.push({
+					name: '-',
+					gender: '-',
+					faculty: '-',
+					field: '-',
+					year: '-',
+					section: '-',
+					baan: '-',
+					status: '-',
+					id: i
+				});
 			}
 		}
-		return bestGroup;
-	}
-
-	calculateCost(groups: Person[][][]) {
-		let cost = 0;
-		for (let d = 0; d < groups.length; d++) {
-			for (let g = 0; g < groups[d].length; g++) {
-				for (let i = 0; i < groups[d][g].length; i++) {
-					for (let j = i + 1; j < groups[d][g].length; j++) {
-						// do something
-						if (this.isForbiddenPair(groups[d][g][i], groups[d][g][j])) {
-							const person1 = groups[d][g][i];
-							const person2 = groups[d][g][j];
-							const id1 = this.forbiddenPairs.indexOf([person1.name, person2.name]);
-							const id2 = this.forbiddenPairs.indexOf([person2.name, person1.name]);
-
-							if (id1 !== -1) {
-								cost += Math.pow(this.C + this.forbiddenPairs.length - id1, 7);
-							}
-							else {
-								cost += Math.pow(this.C + this.forbiddenPairs.length - id2, 7);
-							}
-						}
-						else if (groups[d][g][i].status === groups[d][g][j].status) {
-							cost += Math.pow(this.C, 6);
-						}
-						else if (groups[d][g][i].gender === groups[d][g][j].gender) {
-							cost += Math.pow(this.C, 5);
-						}
-						else if (groups[d][g][i].baan === groups[d][g][j].baan) {
-							cost += Math.pow(this.C, 4);
-						}
-						else if (groups[d][g][i].field === groups[d][g][j].field) {
-							cost += Math.pow(this.C, 3);
-						}
-						else if (groups[d][g][i].faculty === groups[d][g][j].faculty) {
-							cost += Math.pow(this.C, 2);
-						}
-						else if (groups[d][g][i].section === groups[d][g][j].section) {
-							cost += Math.pow(this.C, 1);
-						}
-					}
-				}
-			}
-		}
-		return cost;
 	}
 
 	randomGroup() {
-		this.leftMaxGroupSize =
-			this.data.length - this.TOTAL_GROUP * Math.floor(this.data.length / this.TOTAL_GROUP);
+		this.leftMaxGroupSize = this.data.length - this.TOTAL_GROUP * Math.floor(this.data.length / this.TOTAL_GROUP);
 		if (this.leftMaxGroupSize === 0) this.leftMaxGroupSize = this.TOTAL_GROUP;
 
-		const basis = this.generateBasisGroup();
+		this.forbiddenPairs.forEach((pair) => {
+			let person1 = this.data.find((person) => person.name === pair[0]);
+			let person2 = this.data.find((person) => person.name === pair[1]);
+			if (person1 && person2) {
+				if (person1.id > person2.id) [person1, person2] = [person2, person1];
+				const key = `${person1.id},${person2.id}`;
+				this.forbiddenSet.add(key);
+			}
+		});
+
+		console.log({ forbiddenSet : this.forbiddenSet });
+
+		let [basis, cost] = this.generateGroup();
+		if (cost == -1) cost = 1e9;
+
+		// generate best result
+		// -2 mean very bad input (cant be generated) so just stop the process
+		if (cost != -2) {
+			for(let i = 0; i < this.PROCESS_RUN - 1; i++) {
+				console.log(`<---------- / Process ${i} / ---------->`);
+				const [curBasis, curCost] = this.generateGroup();
+				if (curCost == -1) continue;
+				if (curCost < cost) {
+					cost = curCost;
+					basis = curBasis;
+				}
+			}
+		}
+
+		console.log(`<---------- / Result Cost ${cost} / ---------->`);
 
 		const groups = Array.from({ length: this.DAY }, () =>
 			Array.from({ length: this.TOTAL_GROUP }, () => [])
@@ -102,12 +95,10 @@ export class GroupService {
 
 		for (let d = 0; d < this.DAY; d++) {
 			for (let g = 0; g < this.TOTAL_GROUP; g++) {
-				basis[g].forEach((person, idx) => {
-					// increase actual DAY by 1
-					const group_id = this.calculateGroupId(g, idx, d + 1);
-					groups[d][group_id - 1].push(person);
-					groupOfMembers[person.id - 1][d] = group_id;
-				});
+				for (const person of basis[d][g]) {
+					groups[d][g].push(person);
+					groupOfMembers[person.id - 1][d] = g;
+				}
 			}
 		}
 
@@ -117,99 +108,194 @@ export class GroupService {
 		};
 	}
 
-	generateBasisGroup(): Person[][] {
+	/* --- New Code --- */
+
+	generateSchedule(): Schedule {
+		const scd: Schedule = [];
+
+		for (let d = 0; d < this.DAY; d++) {
+			shuffle(this.newData);
+			const day: Day = [];
+
+			for (let g = 0; g < this.TOTAL_GROUP; g++) {
+				const bunch: Group = this.newData.slice(g * this.MAX_GROUP_SIZE, (g + 1) * this.MAX_GROUP_SIZE);
+				day.push(bunch);
+			}
+
+			scd.push(day);
+		}
+
+		return scd;
+	}
+
+	countConflicts(scd: Schedule): [number, number] {
+		const meet = new Set<string>();
+		let cnt = 0, cost = 0;
+
+		for (const day of scd) {
+			let ack = 0;
+			for (const bunch of day) {
+				let inva = 0;
+				const sorted = [...bunch].sort((a, b) => a.id - b.id);
+				let sameStatus = 0;
+				let sameGender = 0;
+				let sameBaan = 0;
+				let sameField = 0;
+				let sameFaculty = 0;
+				let sameSection = 0;
+				let countSuksa = 0;
+				let countMale = 0;
+				let countNew = 0;
+				let conutGhost = 0;
+				for (let i = 0; i < sorted.length; i++) {
+					for (let j = i + 1; j < sorted.length; j++) {
+						const u = sorted[i];
+						const v = sorted[j];
+						const key = `${u.id},${v.id}`;
+						if (meet.has(key)) cnt++;
+						else meet.add(key);
+						if (this.forbiddenSet.has(key)) cnt++;
+						if (u.name === '-') conutGhost++;
+						if (u.status == v.status) {
+							if (u.status === 'ใหม่') countNew++;
+							sameStatus++;
+						}
+						if (u.gender == v.gender) {
+							if (u.gender === 'ชาย') countMale++;
+							sameGender++;
+						}
+						if (u.baan == v.baan) sameBaan++;
+						if (u.field == v.field) sameField++;
+						if (u.faculty == v.faculty) sameFaculty++;
+						if (u.section == v.section) {
+							if (u.section === 'ศึกษา') countSuksa++;
+							sameSection++;
+						}
+					}
+				}
+
+				// Weighted
+				if(sameStatus == 3) inva += 1;
+				else if(sameStatus == 6) inva += 4;
+				if(sameGender == 3) inva += 2;
+				else if(sameGender == 6) inva += 6;
+				if(sameBaan == 3) ack = this.TOTAL_GROUP;
+				else if(sameBaan == 6) ack = this.TOTAL_GROUP;
+				if(sameField == 3) inva += 1;
+				else if(sameField == 6) inva += 2;
+				if(sameFaculty == 3) inva += 6;
+				else if(sameFaculty == 6) inva += 6;
+				if(sameSection == 3) ack = this.TOTAL_GROUP;
+				else if(sameSection == 6) ack = this.TOTAL_GROUP;
+
+				if(countNew == 6) ack = this.TOTAL_GROUP;
+				if(countMale >= 3) inva += 6;
+				if(countSuksa >= 1) ack = this.TOTAL_GROUP;
+
+				if(conutGhost >= 1) ack = this.TOTAL_GROUP;
+
+				if(inva > 5) ack++;
+				cost += inva;
+			}
+			if(3 * ack > this.TOTAL_GROUP) cnt++; 
+		}
+
+		return [cnt, cost];
+	}
+
+	modifySchedule(scd: Schedule): Schedule {
+		const newScd = JSON.parse(JSON.stringify(scd)) as Schedule; // deep copy
+		const d = Math.floor(Math.random() * this.DAY);
+		let g1: number, g2: number;
+
+		do {
+			g1 = Math.floor(Math.random() * this.TOTAL_GROUP);
+			g2 = Math.floor(Math.random() * this.TOTAL_GROUP);
+		} while (g1 === g2);
+
+		const p1 = Math.floor(Math.random() * this.MAX_GROUP_SIZE);
+		const p2 = Math.floor(Math.random() * this.MAX_GROUP_SIZE);
+
+		[newScd[d][g1][p1], newScd[d][g2][p2]] = [newScd[d][g2][p2], newScd[d][g1][p1]];
+		return newScd;
+	}
+
+	generateGroup(): [Schedule, number] {
 		this.newData = this.data.map((person: Person) => ({ ...person }));
-		const basis = Array.from({ length: this.TOTAL_GROUP }, () => []) as Person[][];
 
-		// insert leader
-		if (this.leader.length > 0) this.insertLeader(basis);
+		if (this.TOTAL_STAFF <= 0 || this.TOTAL_GROUP <= 0 || this.DAY <= 0) throw new Error("Invalid input");
+		if (this.TOTAL_STAFF < this.TOTAL_GROUP) throw new Error("total staff less than total group");
 
-		// insert all forbidden pairs
-		this.insertForbiddenPairs(basis);
+		if ((this.MAX_GROUP_SIZE - 1) * this.DAY >= this.TOTAL_STAFF) throw new Error("Too many days for the given group size");
 
-		// fill leftover slots with random people
-		this.fillWithRandom(basis);
-		return basis;
-	}
+		let curScd: Schedule = this.generateSchedule();
+		let [curScore, curCost] = this.countConflicts(curScd);
+		let prevScore = 1e9;
 
-	fillWithRandom(basis: Person[][]) {
-		for (let g = 0; g < basis.length; g++) {
-			while (this.checkInsertSize(1, basis[g])) {
-				const person = this.getRandomPerson(this.newData);
-				basis[g].push(person);
-				this.newData = this.newData.filter((p) => p.id !== person.id);
-			}
-		}
-	}
+		let T = 1.0;
+		let alpha = 0.5;
+		
+		let epoch = 0;
+		let cnt = 0;
 
-	insertLeader(basis: Person[][]) {
-		for (let g = 0; g < basis.length; g++) {
-			const leader = this.getRandomPerson(this.leader);
-			const person1 = this.newData.find((person) =>
-				person.name === leader.name &&
-				person.faculty === leader.faculty &&
-				person.year === leader.year);
-			if (person1) {
-				basis[g].push(person1);
-				this.newData = this.newData.filter((p) => p.id !== person1.id);
-				this.leader = this.leader.filter((p) => p.name !== leader.name);
-			}
-		}
-	}
-	
-	insertForbiddenPairs(basis: Person[][]) {
-		let g = 0;
-		this.forbiddenPairs.forEach((pair) => {
-			let person1 = this.newData.find((person) => person.name === pair[0]);
-			let person2 = this.newData.find((person) => person.name === pair[1]);
-			if (person1 && person2) {
-				if (this.checkInsertSize(2, basis[g])) {
-					this.newData = this.newData.filter(
-						(person) => person.id !== person1?.id && person.id !== person2?.id
-					);
-					basis[g].push(person1);
-					basis[g].push(person2);
-					g++;
-					if (g === basis.length) g = 0;
+		while (curScore > 0) {
+			if (cnt % (this.BATCH_SIZE * this.ITER) === 0) {
+				epoch++;
+				if (epoch == 4) {
+					console.log("\n---- Unsuccessfully Generated :( ----\n");
+					if (curScore >= this.DAY) curCost = -2;
+					else curCost = -1;
+					break;
 				}
-			} else if (!person1 && !person2) {
-				// do nothing
-			} else {
-				const personIdx = person1 ? 1 : 0;
-				if (person2) [person1, person2] = [person2, person1];
-				const insertIdx = this.findPersonGroupIndex(basis, pair[personIdx]);
-				if (this.checkInsertSize(1, basis[insertIdx])) {
-					this.newData = this.newData.filter((person) => person.id !== person1?.id);
-					basis[insertIdx].push(person1 as Person);
+				console.log(`---------- [ Epoch ${epoch} ] ----------`);
+
+				if (curScore > prevScore) {
+					alpha -= (4 * (1 - alpha)) / 5;
+					alpha = Math.max(alpha, 0);
+				} else {
+					alpha += (1 - alpha) / 2;
 				}
+
+				console.log("Using alpha =", alpha);
+
+				prevScore = curScore;
+				curScd = this.generateSchedule();
+				[curScore, curCost] = this.countConflicts(curScd);
+				T = 1.0;
+				cnt = 0;
+
+				if (curScore === 0) break;
 			}
-		});
-	}
 
-	findPersonGroupIndex(basis: Person[][], name: string) {
-		for (let i = 0; i < basis.length; i++) {
-			if (basis[i].find((p) => p.name === name)) return i;
+			const nextScd = this.modifySchedule(curScd);
+			const [nextScore, nextCost] = this.countConflicts(nextScd);
+			const delta = nextScore - curScore;
+
+			if (delta < 0 || Math.exp(-delta / T) > Math.random()) {
+				curScd = nextScd;
+				curScore = nextScore;
+				curCost = nextCost;
+			}
+			else if (delta == 0 && nextCost < curCost) {
+				curScd = nextScd;
+				curScore = nextScore;
+				curCost = nextCost;
+			}
+
+			if (cnt % this.BATCH_SIZE === 0) {
+				console.log(`Batch: ${cnt / this.BATCH_SIZE + 1}, Conflicts: ${curScore}, Cost: ${curCost}`);
+			}
+
+			if (curScore === 0) {
+				console.log("\n---- Successfully Generated! ----\n");
+				console.log(`\n---- Cost : ${curCost} ----\n`);
+				break;
+			}
+
+			T *= alpha;
+			cnt++;
 		}
-		return -1;
-	}
-
-	checkInsertSize(insertSize: number, group: Person[]) {
-		if (group.length + insertSize < this.MAX_GROUP_SIZE) return true;
-		if (group.length + insertSize === this.MAX_GROUP_SIZE && this.leftMaxGroupSize > 0) {
-			this.leftMaxGroupSize--;
-			return true;
-		}
-		return false;
-	}
-
-	getRandomPerson(arr: Person[]) {
-		const rand = Math.floor(Math.random() * arr.length);
-		return arr[rand];
-	}
-
-	calculateGroupId(base_group: number, round: number, day: number): number {
-		if (round === 0) round = this.MAX_GROUP_SIZE;
-		return ((base_group + round * day) % this.TOTAL_GROUP) + 1;
+		return [curScd, curCost];
 	}
 
 	/**

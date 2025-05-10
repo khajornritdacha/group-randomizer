@@ -261,20 +261,22 @@
 			>
 				<h3 class="text-lg font-bold mb-2 flex justify-center text-white">Group : {i + 1}</h3>
 				{#each group as member}
-					<p
-						class={`${
-							member.name === firstMember || member.name === secondMember
-								? 'bg-orange-600 text-white'
-								: hasForbiddenPairs(page, i, member)
-									? 'bg-red-500 text-white '
-									: 'text-orange-primary bg-white'
-						} text-center font-bold hover:bg-orange-200 border-2 border-orange-primary transition-all rounded-md py-1`}
-					>
-						{member.name}
-						{#if showDetail}
-							#{member.year} {member.faculty}
-						{/if}
-					</p>
+					{#if member.name !== '-'}
+						<p
+							class={`${
+								member.name === firstMember || member.name === secondMember
+									? 'bg-orange-600 text-white'
+									: hasForbiddenPairs(page, i, member)
+										? 'bg-red-500 text-white '
+										: 'text-orange-primary bg-white'
+							} text-center font-bold hover:bg-orange-200 border-2 border-orange-primary transition-all rounded-md py-1`}
+						>
+							{member.name}
+							{#if showDetail}
+								#{member.year} {member.faculty}
+							{/if}
+						</p>
+					{/if}
 				{/each}
 			</div>
 		{/each}
