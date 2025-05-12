@@ -188,6 +188,7 @@
 		}
 		groups_store.set(result.groups);
 		groupOfMembers_store.set(result.groupOfMembers);
+		secondMember = '';
 		return;
 	}
 </script>
@@ -290,43 +291,46 @@
 	>
 		Show swappable pairs
 	</button>
-
-	{#if showSwappablePairs}
-		<div class="mt-6 grid grid-cols-7 gap-4 mx-12">
-			{#each $data_store as member1, i}
-				{#each $data_store as member2, j}
-					{#if i < j && ((firstMember === '' && secondMember === '') || (secondMember === '' && ((member1.name === firstMember && firstMember !== '') || (member2.name === firstMember && firstMember !== ''))) || (secondMember !== '' && ((member1.name === firstMember && member2.name === secondMember) || (member2.name === firstMember && member1.name === secondMember)))) && trySwapMembers(member1.name, member2.name).error === ''}
-						<div class="bg-purple-400 hover:bg-purple-600 transition-all py-2 px-4 rounded-xl m-2">
-							<p
-								class={`text-center text-purple-500 ${
-									member1.name === firstMember || member1.name === secondMember
-										? 'bg-purple-700 text-white'
-										: 'bg-white'
-								} hover:bg-purple-200 border-2 border-purple-300 transition-all rounded-md py-1`}
+	{#key page}
+		{#if showSwappablePairs}
+			<div class="mt-6 grid grid-cols-7 gap-4 mx-12">
+				{#each $data_store as member1, i}
+					{#each $data_store as member2, j}
+						{#if i < j && ((firstMember === '' && secondMember === '') || (secondMember === '' && ((member1.name === firstMember && firstMember !== '') || (member2.name === firstMember && firstMember !== ''))) || (secondMember !== '' && ((member1.name === firstMember && member2.name === secondMember) || (member2.name === firstMember && member1.name === secondMember)))) && trySwapMembers(member1.name, member2.name).error === ''}
+							<div
+								class="bg-purple-400 hover:bg-purple-600 transition-all py-2 px-4 rounded-xl m-2"
 							>
-								{member1.name}
-								{#if showDetail}
-									#{member1.year} {member1.faculty}
-								{/if}
-							</p>
-							<p
-								class={`text-center text-purple-500 ${
-									member2.name === firstMember || member2.name === secondMember
-										? 'bg-purple-700 text-white'
-										: 'bg-white'
-								} hover:bg-purple-200 border-2 border-purple-300 transition-all rounded-md py-1`}
-							>
-								{member2.name}
-								{#if showDetail}
-									#{member2.year} {member2.faculty}
-								{/if}
-							</p>
-						</div>
-					{/if}
+								<p
+									class={`text-center text-purple-500 ${
+										member1.name === firstMember || member1.name === secondMember
+											? 'bg-purple-700 text-white'
+											: 'bg-white'
+									} hover:bg-purple-200 border-2 border-purple-300 transition-all rounded-md py-1`}
+								>
+									{member1.name}
+									{#if showDetail}
+										#{member1.year} {member1.faculty}
+									{/if}
+								</p>
+								<p
+									class={`text-center text-purple-500 ${
+										member2.name === firstMember || member2.name === secondMember
+											? 'bg-purple-700 text-white'
+											: 'bg-white'
+									} hover:bg-purple-200 border-2 border-purple-300 transition-all rounded-md py-1`}
+								>
+									{member2.name}
+									{#if showDetail}
+										#{member2.year} {member2.faculty}
+									{/if}
+								</p>
+							</div>
+						{/if}
+					{/each}
 				{/each}
-			{/each}
-		</div>
-	{/if}
+			</div>
+		{/if}
+	{/key}
 </div>
 
 <div class="my-8 flex flex-row gap-2 items-center justify-center">
@@ -341,19 +345,23 @@
 			<option value={member.name}>{member.name}</option>
 		{/each}
 	</select>
-	<select
-		class="p-2 ml-2 rounded mt-1 cursor-pointer"
-		placeholder="name2"
-		disabled={$data_store.length === 0}
-		bind:value={secondMember}
-	>
-		<option value="">Select 2nd member</option>
-		{#each $data_store as member}
-			{#if trySwapMembers(firstMember, member.name).error === ''}
-				<option value={member.name}>{member.name}</option>
-			{/if}
-		{/each}
-	</select>
+	{#key page}
+		<select
+			class="p-2 ml-2 rounded mt-1 cursor-pointer"
+			placeholder="name2"
+			disabled={$data_store.length === 0}
+			bind:value={secondMember}
+		>
+			{#key secondMember}
+				<option value="">Select 2nd member</option>
+				{#each $data_store as member}
+					{#if trySwapMembers(firstMember, member.name).error === ''}
+						<option value={member.name}>{member.name}</option>
+					{/if}
+				{/each}
+			{/key}
+		</select>
+	{/key}
 	<button
 		class="bg-orange-400 hover:bg-orange-primary-darken text-white font-bold transition-all text-lg py-1 px-3 mx-2 rounded-lg cursor-pointer"
 		on:click={handleSwapMembers}
@@ -377,7 +385,10 @@
 			class={`${
 				i === page ? 'bg-orange-300' : 'bg-white'
 			} hover:bg-orange-200 text-orange-primary border-2 border-orange-primary transition-all rounded-md py-1 cursor-pointer w-8`}
-			on:click={() => setPage(i)}
+			on:click={() => {
+				setPage(i);
+				secondMember = '';
+			}}
 		>
 			D{i + 1}
 		</button>
