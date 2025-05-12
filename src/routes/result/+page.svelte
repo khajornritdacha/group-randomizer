@@ -91,8 +91,8 @@
 	}
 
 	function IsMetTwice(groups: Person[][][]) {
-		const meet_cnt = Array.from({ length: $data_store.length }, () =>
-			Array.from({ length: $data_store.length }, () => 0)
+		const meet_cnt = Array.from({ length: $groupOfMembers_store.length }, () =>
+			Array.from({ length: $groupOfMembers_store.length }, () => 0)
 		);
 		for (let d = 0; d < groups.length; d++) {
 			for (let g = 0; g < groups[d].length; g++) {
@@ -146,7 +146,7 @@
 			Array.from({ length: $groups_store[0].length }, () => [])
 		) as Person[][][];
 
-		const groupOfMembers = Array.from({ length: $data_store.length }, () =>
+		const groupOfMembers = Array.from({ length: $groupOfMembers_store.length }, () =>
 			Array.from({ length: $groups_store.length }, () => -1)
 		);
 		for (let i = 0; i < $groups_store.length; i++) {
