@@ -1,4 +1,4 @@
-import type { Person, Schedule, Day, Group } from '$lib/types';
+import type { Person, Schedule, Day, Group, RandomGroupResult } from '$lib/types';
 
 export class GroupService {
 	readonly BATCH_SIZE: number = 1000;
@@ -16,7 +16,13 @@ export class GroupService {
 	newData: Person[];
 	leftMaxGroupSize: number; // Count number of groups that can have maximum group size
 
-	constructor(data: Person[], leader: Person[], forbiddenPairs: string[][], DAY: number, TOTAL_GROUP: number) {
+	constructor(
+		data: Person[],
+		leader: Person[],
+		forbiddenPairs: string[][],
+		DAY: number,
+		TOTAL_GROUP: number
+	) {
 		shuffle(data);
 		this.data = data;
 		this.forbiddenPairs = forbiddenPairs;
@@ -25,16 +31,17 @@ export class GroupService {
 		this.TOTAL_STAFF = data.length;
 		this.MAX_GROUP_SIZE = Math.ceil(data.length / TOTAL_GROUP);
 		this.newData = [];
-		this.leftMaxGroupSize = this.data.length - this.TOTAL_GROUP * Math.floor(this.data.length / this.TOTAL_GROUP);
+		this.leftMaxGroupSize =
+			this.data.length - this.TOTAL_GROUP * Math.floor(this.data.length / this.TOTAL_GROUP);
 		this.leader = leader;
 		this.forbiddenSet = new Set<string>();
 
-		let rest = this.data.length % this.TOTAL_GROUP;
-		let dataSize = this.data.length;
+		const rest = this.data.length % this.TOTAL_GROUP;
+		const dataSize = this.data.length;
 
 		if (rest > 0) {
 			for (let i = dataSize + 1; i < dataSize + this.TOTAL_GROUP - rest + 1; i++) {
-				console.log("N e wwwwwwwwwwwwwwww")
+				console.log('N e wwwwwwwwwwwwwwww');
 				this.data.push({
 					name: '-',
 					gender: '-',
@@ -50,8 +57,9 @@ export class GroupService {
 		}
 	}
 
-	randomGroup() {
-		this.leftMaxGroupSize = this.data.length - this.TOTAL_GROUP * Math.floor(this.data.length / this.TOTAL_GROUP);
+	randomGroup(): RandomGroupResult {
+		this.leftMaxGroupSize =
+			this.data.length - this.TOTAL_GROUP * Math.floor(this.data.length / this.TOTAL_GROUP);
 		if (this.leftMaxGroupSize === 0) this.leftMaxGroupSize = this.TOTAL_GROUP;
 
 		this.forbiddenPairs.forEach((pair) => {
@@ -64,7 +72,7 @@ export class GroupService {
 			}
 		});
 
-		console.log({ forbiddenSet : this.forbiddenSet });
+		console.log({ forbiddenSet: this.forbiddenSet });
 
 		let [basis, cost] = this.generateGroup();
 		if (cost == -1) cost = 1e9;
@@ -72,7 +80,7 @@ export class GroupService {
 		// generate best result
 		// -2 mean very bad input (cant be generated) so just stop the process
 		if (cost != -2) {
-			for(let i = 0; i < this.PROCESS_RUN - 1; i++) {
+			for (let i = 0; i < this.PROCESS_RUN - 1; i++) {
 				console.log(`<---------- / Process ${i} / ---------->`);
 				const [curBasis, curCost] = this.generateGroup();
 				if (curCost == -1) continue;
@@ -118,7 +126,10 @@ export class GroupService {
 			const day: Day = [];
 
 			for (let g = 0; g < this.TOTAL_GROUP; g++) {
-				const bunch: Group = this.newData.slice(g * this.MAX_GROUP_SIZE, (g + 1) * this.MAX_GROUP_SIZE);
+				const bunch: Group = this.newData.slice(
+					g * this.MAX_GROUP_SIZE,
+					(g + 1) * this.MAX_GROUP_SIZE
+				);
 				day.push(bunch);
 			}
 
@@ -130,7 +141,8 @@ export class GroupService {
 
 	countConflicts(scd: Schedule): [number, number] {
 		const meet = new Set<string>();
-		let cnt = 0, cost = 0;
+		let cnt = 0,
+			cost = 0;
 
 		for (const day of scd) {
 			let ack = 0;
@@ -175,29 +187,29 @@ export class GroupService {
 				}
 
 				// Weighted
-				if(sameStatus == 3) inva += 1;
-				else if(sameStatus == 6) inva += 4;
-				if(sameGender == 3) inva += 2;
-				else if(sameGender == 6) inva += 6;
-				if(sameBaan == 3) ack = this.TOTAL_GROUP;
-				else if(sameBaan == 6) ack = this.TOTAL_GROUP;
-				if(sameField == 3) inva += 1;
-				else if(sameField == 6) inva += 2;
-				if(sameFaculty == 3) inva += 6;
-				else if(sameFaculty == 6) inva += 6;
-				if(sameSection == 3) ack = this.TOTAL_GROUP;
-				else if(sameSection == 6) ack = this.TOTAL_GROUP;
+				if (sameStatus == 3) inva += 1;
+				else if (sameStatus == 6) inva += 4;
+				if (sameGender == 3) inva += 2;
+				else if (sameGender == 6) inva += 6;
+				if (sameBaan == 3) ack = this.TOTAL_GROUP;
+				else if (sameBaan == 6) ack = this.TOTAL_GROUP;
+				if (sameField == 3) inva += 1;
+				else if (sameField == 6) inva += 2;
+				if (sameFaculty == 3) inva += 6;
+				else if (sameFaculty == 6) inva += 6;
+				if (sameSection == 3) ack = this.TOTAL_GROUP;
+				else if (sameSection == 6) ack = this.TOTAL_GROUP;
 
-				if(countNew == 6) ack = this.TOTAL_GROUP;
-				if(countMale >= 3) inva += 6;
-				if(countSuksa >= 1) ack = this.TOTAL_GROUP;
+				if (countNew == 6) ack = this.TOTAL_GROUP;
+				if (countMale >= 3) inva += 6;
+				if (countSuksa >= 1) ack = this.TOTAL_GROUP;
 
-				if(conutGhost >= 1) ack = this.TOTAL_GROUP;
+				if (conutGhost >= 1) ack = this.TOTAL_GROUP;
 
-				if(inva > 5) ack++;
+				if (inva > 5) ack++;
 				cost += inva;
 			}
-			if(3 * ack > this.TOTAL_GROUP) cnt++; 
+			if (3 * ack > this.TOTAL_GROUP) cnt++;
 		}
 
 		return [cnt, cost];
@@ -223,10 +235,12 @@ export class GroupService {
 	generateGroup(): [Schedule, number] {
 		this.newData = this.data.map((person: Person) => ({ ...person }));
 
-		if (this.TOTAL_STAFF <= 0 || this.TOTAL_GROUP <= 0 || this.DAY <= 0) throw new Error("Invalid input");
-		if (this.TOTAL_STAFF < this.TOTAL_GROUP) throw new Error("total staff less than total group");
+		if (this.TOTAL_STAFF <= 0 || this.TOTAL_GROUP <= 0 || this.DAY <= 0)
+			throw new Error('Invalid input');
+		if (this.TOTAL_STAFF < this.TOTAL_GROUP) throw new Error('total staff less than total group');
 
-		if ((this.MAX_GROUP_SIZE - 1) * this.DAY >= this.TOTAL_STAFF) throw new Error("Too many days for the given group size");
+		if ((this.MAX_GROUP_SIZE - 1) * this.DAY >= this.TOTAL_STAFF)
+			throw new Error('Too many days for the given group size');
 
 		let curScd: Schedule = this.generateSchedule();
 		let [curScore, curCost] = this.countConflicts(curScd);
@@ -234,7 +248,7 @@ export class GroupService {
 
 		let T = 1.0;
 		let alpha = 0.5;
-		
+
 		let epoch = 0;
 		let cnt = 0;
 
@@ -242,7 +256,7 @@ export class GroupService {
 			if (cnt % (this.BATCH_SIZE * this.ITER) === 0) {
 				epoch++;
 				if (epoch == 4) {
-					console.log("\n---- Unsuccessfully Generated :( ----\n");
+					console.log('\n---- Unsuccessfully Generated :( ----\n');
 					if (curScore >= this.DAY) curCost = -2;
 					else curCost = -1;
 					break;
@@ -256,7 +270,7 @@ export class GroupService {
 					alpha += (1 - alpha) / 2;
 				}
 
-				console.log("Using alpha =", alpha);
+				console.log('Using alpha =', alpha);
 
 				prevScore = curScore;
 				curScd = this.generateSchedule();
@@ -275,19 +289,20 @@ export class GroupService {
 				curScd = nextScd;
 				curScore = nextScore;
 				curCost = nextCost;
-			}
-			else if (delta == 0 && nextCost < curCost) {
+			} else if (delta == 0 && nextCost < curCost) {
 				curScd = nextScd;
 				curScore = nextScore;
 				curCost = nextCost;
 			}
 
 			if (cnt % this.BATCH_SIZE === 0) {
-				console.log(`Batch: ${cnt / this.BATCH_SIZE + 1}, Conflicts: ${curScore}, Cost: ${curCost}`);
+				console.log(
+					`Batch: ${cnt / this.BATCH_SIZE + 1}, Conflicts: ${curScore}, Cost: ${curCost}`
+				);
 			}
 
 			if (curScore === 0) {
-				console.log("\n---- Successfully Generated! ----\n");
+				console.log('\n---- Successfully Generated! ----\n');
 				console.log(`\n---- Cost : ${curCost} ----\n`);
 				break;
 			}

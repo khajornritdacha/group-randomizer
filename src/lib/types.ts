@@ -13,3 +13,8 @@ export interface Person {
 export type Group = Person[];
 export type Day = Group[];
 export type Schedule = Day[];
+
+export interface RandomGroupResult {
+	groups: Person[][][];
+	groupOfMembers: number[][];
+}
