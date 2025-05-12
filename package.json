@@ -33,6 +33,7 @@
 	},
 	"type": "module",
 	"dependencies": {
+		"svelte-french-toast": "^1.2.0",
 		"svelte-parts": "^0.0.6",
 		"xlsx": "^0.18.5"
 	}
