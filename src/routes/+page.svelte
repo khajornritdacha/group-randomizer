@@ -18,6 +18,7 @@
 	let isLoading = false;
 	let intervalId: number | null = null;
 	let elapsedTime = 0;
+	let processingStatusWord = 'Loading';
 
 	function startLoadingModal() {
 		isLoading = true;
@@ -54,16 +55,23 @@
 		});
 
 		worker.onmessage = (event: MessageEvent<{ data: RandomGroupResult; errors: Error }>) => {
-			stopLoadingModal();
 			const { errors } = event.data;
 
 			if (errors !== null) {
+				stopLoadingModal();
 				showErrorsModal(errors.message);
 				return;
 			}
 
+			if (event.data.data.processingStatus !== undefined) {
+				processingStatusWord = event.data.data.processingStatus;
+			}
+
 			const { groups, groupOfMembers } = event.data.data;
 
+			if (groups === null || groupOfMembers === null) return;
+
+			stopLoadingModal();
 			toast.success('Generated groups successfully!');
 			groups_store.set(groups);
 			groupOfMembers_store.set(groupOfMembers);
@@ -138,7 +146,8 @@
 			style="backdrop-filter: blur(5px);"
 		>
 			<div class="bg-white p-8 rounded-2xl shadow-xl text-center max-w-sm w-full space-y-4">
-				<p class="text-2xl font-semibold text-orange-600">Generating Groups...</p>
+				<!-- <p class="text-2xl font-semibold text-orange-600">Generating Groups</p> -->
+				<p class="text-2xl font-semibold text-orange-600">Currently in {processingStatusWord}{'.'.repeat((elapsedTime % 3) + 1)}</p>
 				<p class="text-lg">Elapsed Time: {elapsedTime} second{elapsedTime === 1 ? '' : 's'}</p>
 				<div class="flex justify-center">
 					<div

@@ -17,4 +17,5 @@ export type Schedule = Day[];
 export interface RandomGroupResult {
 	groups: Person[][][];
 	groupOfMembers: number[][];
+	processingStatus?: string;
 }
