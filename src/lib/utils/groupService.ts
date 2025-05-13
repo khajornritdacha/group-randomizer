@@ -224,7 +224,7 @@ export class GroupService {
 
 				if (sameStatus == 3) inva += 1;
 				else if (sameStatus == 6) inva += 4;
-				if (sameGender == 3) inva += 2;
+				if (sameGender == 3) inva += 4;
 				else if (sameGender == 6) inva += 6; // normal weight
 				if (sameBaan == 3) to_cut++;
 				else if (sameBaan == 6) to_cut++; // found a hard conflic
