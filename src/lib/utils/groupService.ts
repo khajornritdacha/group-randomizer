@@ -3,7 +3,8 @@ import type { Person, Schedule, Day, Group, RandomGroupResult } from '$lib/types
 export class GroupService {
 	readonly BATCH_SIZE: number = 1000;
 	readonly ITER: number = 25;
-	readonly PROCESS_RUN: number = 3;
+	readonly PROCESS_RUN: number = 4;
+	readonly MAX_EPOCH: number = 4;
 	readonly C: number = 91;
 	readonly data: Person[];
 	readonly forbiddenPairs: string[][];
@@ -12,6 +13,9 @@ export class GroupService {
 	readonly TOTAL_STAFF: number;
 	readonly MAX_GROUP_SIZE: number;
 	forbiddenSet: Set<string>;
+	weight: number = 4; // if a group have cost more than this value then consider it as a bad group
+	cut: number = 1; // minimum number of invalid group per day to cut the schedule off
+	maxBadGroup: number = 4; // maximum number of bad group available per day
 	leader: Person[];
 	newData: Person[];
 	leftMaxGroupSize: number; // Count number of groups that can have maximum group size
@@ -41,7 +45,7 @@ export class GroupService {
 
 		if (rest > 0) {
 			for (let i = dataSize + 1; i < dataSize + this.TOTAL_GROUP - rest + 1; i++) {
-				console.log('N e wwwwwwwwwwwwwwww');
+				console.log('add a ghost data');
 				this.data.push({
 					name: '-',
 					gender: '-',
@@ -55,6 +59,11 @@ export class GroupService {
 				});
 			}
 		}
+
+		// default
+		this.maxBadGroup = Math.floor(this.TOTAL_GROUP / 3);
+		this.weight = 4;
+		this.cut = 1;
 	}
 
 	randomGroup(): RandomGroupResult {
@@ -74,19 +83,27 @@ export class GroupService {
 
 		console.log({ forbiddenSet: this.forbiddenSet });
 
+		console.log(`<---------- / Process 1 / ---------->`);
 		let [basis, cost] = this.generateGroup();
-		if (cost == -1) cost = 1e9;
 
 		// generate best result
 		// -2 mean very bad input (cant be generated) so just stop the process
-		if (cost != -2) {
+		if (cost < 0) {
 			for (let i = 0; i < this.PROCESS_RUN - 1; i++) {
-				console.log(`<---------- / Process ${i} / ---------->`);
+				console.log(`<---------- / Process ${i + 2} / ---------->`);
+				this.weight <<= 1;
+				this.maxBadGroup <<= 1;
+				if (i > 0) this.cut++;
+				if (i == this.PROCESS_RUN - 2) {
+					this.maxBadGroup = this.TOTAL_GROUP;
+					this.cut = this.TOTAL_GROUP;
+					this.weight = 1e3;
+				}
 				const [curBasis, curCost] = this.generateGroup();
-				if (curCost == -1) continue;
-				if (curCost < cost) {
+				if (curCost >= 0) {
 					cost = curCost;
 					basis = curBasis;
+					break;
 				}
 			}
 		}
@@ -116,7 +133,7 @@ export class GroupService {
 		};
 	}
 
-	/* --- New Code --- */
+	/* --- Algorithm--- */
 
 	generateSchedule(): Schedule {
 		const scd: Schedule = [];
@@ -141,13 +158,19 @@ export class GroupService {
 
 	countConflicts(scd: Schedule): [number, number] {
 		const meet = new Set<string>();
-		let cnt = 0,
+		let conf = 0,
 			cost = 0;
+
+		/*
+		conf is number of hard conflic (should equal to zero after all algorithm finished)
+		cost is number refer to soft conflic (more cost value mean more conflic)
+		*/
 
 		for (const day of scd) {
 			let ack = 0;
 			for (const bunch of day) {
 				let inva = 0;
+				let to_cut = 0;
 				const sorted = [...bunch].sort((a, b) => a.id - b.id);
 				let sameStatus = 0;
 				let sameGender = 0;
@@ -164,9 +187,9 @@ export class GroupService {
 						const u = sorted[i];
 						const v = sorted[j];
 						const key = `${u.id},${v.id}`;
-						if (meet.has(key)) cnt++;
+						if (meet.has(key)) conf++;
 						else meet.add(key);
-						if (this.forbiddenSet.has(key)) cnt++;
+						if (this.forbiddenSet.has(key)) conf++;
 						if (u.name === '-') conutGhost++;
 						if (u.status == v.status) {
 							if (u.status === 'ใหม่') countNew++;
@@ -186,33 +209,46 @@ export class GroupService {
 					}
 				}
 
-				// Weighted
+				/* --- Weighted --- */
+
+				/* 
+				< to_cut++ >
+				this mean to immediatly cut this schedule due to have a hard conflic in some group
+
+				< inva += weight >
+				this mean add some weight to a condition
+
+				inva > weight we do ack += 1 to count bad group (ack == number of bad group)
+				to_cut >= this.cut we set ack to its max value to increase conf which cause to rerun process
+				*/
+
 				if (sameStatus == 3) inva += 1;
 				else if (sameStatus == 6) inva += 4;
 				if (sameGender == 3) inva += 2;
-				else if (sameGender == 6) inva += 6;
-				if (sameBaan == 3) ack = this.TOTAL_GROUP;
-				else if (sameBaan == 6) ack = this.TOTAL_GROUP;
+				else if (sameGender == 6) inva += 6; // normal weight
+				if (sameBaan == 3) to_cut++;
+				else if (sameBaan == 6) to_cut++; // found a hard conflic
 				if (sameField == 3) inva += 1;
 				else if (sameField == 6) inva += 2;
 				if (sameFaculty == 3) inva += 6;
 				else if (sameFaculty == 6) inva += 6;
-				if (sameSection == 3) ack = this.TOTAL_GROUP;
-				else if (sameSection == 6) ack = this.TOTAL_GROUP;
+				if (sameSection == 3) to_cut++;
+				else if (sameSection == 6) to_cut++;
 
-				if (countNew == 6) ack = this.TOTAL_GROUP;
+				if (countNew == 6) to_cut++;
 				if (countMale >= 3) inva += 6;
-				if (countSuksa >= 1) ack = this.TOTAL_GROUP;
+				if (countSuksa >= 1) to_cut++;
 
-				if (conutGhost >= 1) ack = this.TOTAL_GROUP;
+				if (conutGhost >= 1) to_cut++;
 
 				if (inva > 5) ack++;
+				if (to_cut >= this.cut) ack += this.maxBadGroup + 1;
 				cost += inva;
 			}
-			if (3 * ack > this.TOTAL_GROUP) cnt++;
+			if (ack > this.maxBadGroup) conf++;
 		}
 
-		return [cnt, cost];
+		return [conf, cost];
 	}
 
 	modifySchedule(scd: Schedule): Schedule {
@@ -255,7 +291,7 @@ export class GroupService {
 		while (curScore > 0) {
 			if (cnt % (this.BATCH_SIZE * this.ITER) === 0) {
 				epoch++;
-				if (epoch == 4) {
+				if (epoch == this.MAX_EPOCH) {
 					console.log('\n---- Unsuccessfully Generated :( ----\n');
 					if (curScore >= this.DAY) curCost = -2;
 					else curCost = -1;
