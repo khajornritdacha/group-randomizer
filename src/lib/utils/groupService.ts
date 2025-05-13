@@ -84,6 +84,14 @@ export class GroupService {
 		console.log({ forbiddenSet: this.forbiddenSet });
 
 		console.log(`<---------- / Process 1 / ---------->`);
+		postMessage({
+			data: {
+				groups: null, 
+				groupOfMembers: null, 
+				processingStatus: "Stage 1"
+			},
+			errors: null
+		});
 		let [basis, cost] = this.generateGroup();
 
 		// generate best result
@@ -91,6 +99,14 @@ export class GroupService {
 		if (cost < 0) {
 			for (let i = 0; i < this.PROCESS_RUN - 1; i++) {
 				console.log(`<---------- / Process ${i + 2} / ---------->`);
+				postMessage({
+					data: {
+						groups: null, 
+						groupOfMembers: null, 
+						processingStatus: `Stage ${i + 2}`
+					},
+					errors: null
+				});
 				this.weight <<= 1;
 				this.maxBadGroup <<= 1;
 				if (i > 0) this.cut++;
@@ -109,6 +125,14 @@ export class GroupService {
 		}
 
 		console.log(`<---------- / Result Cost ${cost} / ---------->`);
+		postMessage({
+			data: {
+				groups: null, 
+				groupOfMembers: null, 
+				processingStatus: `Calculate Result`
+			},
+			errors: null
+		});
 
 		const groups = Array.from({ length: this.DAY }, () =>
 			Array.from({ length: this.TOTAL_GROUP }, () => [])
@@ -293,6 +317,14 @@ export class GroupService {
 				epoch++;
 				if (epoch == this.MAX_EPOCH) {
 					console.log('\n---- Unsuccessfully Generated :( ----\n');
+					postMessage({
+						data: {
+							groups: null, 
+							groupOfMembers: null, 
+							processingStatus: `Unsuccessfully Generated`
+						},
+						errors: null
+					});
 					if (curScore >= this.DAY) curCost = -2;
 					else curCost = -1;
 					break;
@@ -338,8 +370,17 @@ export class GroupService {
 			if (curScore === 0) {
 				console.log('\n---- Successfully Generated! ----\n');
 				console.log(`\n---- Cost : ${curCost} ----\n`);
-
+				
 				console.log('\n---- Optimize Processing... ----\n');
+				postMessage({
+					data: {
+						groups: null, 
+						groupOfMembers: null, 
+						processingStatus: `Optimize Processing`
+					},
+					errors: null
+				});
+
 				let opc = 1;
 				while (opc % (this.BATCH_SIZE * this.ITER) != 0) {
 					nextScd = this.modifySchedule(curScd);

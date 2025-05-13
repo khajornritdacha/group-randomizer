@@ -15,6 +15,14 @@ self.onmessage = (
 	const { members, leader, day, forbiddenPairs, group_cnt } = event.data.data;
 
 	try {
+		self.postMessage({
+			data: {
+				groups: null, 
+				groupOfMembers: null, 
+				processingStatus: "Loading"
+			},
+			errors: null
+		});
 		const groupService = new GroupService(members, leader, forbiddenPairs, day, group_cnt);
 		const res = groupService.randomGroup();
 		self.postMessage({
