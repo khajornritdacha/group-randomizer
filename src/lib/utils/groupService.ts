@@ -88,11 +88,11 @@ export class GroupService {
 			data: {
 				groups: null, 
 				groupOfMembers: null, 
-				processingStatus: "Stage 1"
+				processingStatus: 'Stage 1'
 			},
 			errors: null
 		});
-		let [basis, cost] = this.generateGroup();
+		let [basis, cost] = this.generateGroup(1);
 
 		// generate best result
 		// -2 mean very bad input (cant be generated) so just stop the process
@@ -115,7 +115,7 @@ export class GroupService {
 					this.cut = this.TOTAL_GROUP;
 					this.weight = 1e3;
 				}
-				const [curBasis, curCost] = this.generateGroup();
+				const [curBasis, curCost] = this.generateGroup(i + 2);
 				if (curCost >= 0) {
 					cost = curCost;
 					basis = curBasis;
@@ -129,7 +129,7 @@ export class GroupService {
 			data: {
 				groups: null, 
 				groupOfMembers: null, 
-				processingStatus: `Calculate Result`
+				processingStatus: `Calculating Result`
 			},
 			errors: null
 		});
@@ -292,7 +292,7 @@ export class GroupService {
 		return newScd;
 	}
 
-	generateGroup(): [Schedule, number] {
+	generateGroup(currentStage: number): [Schedule, number] {
 		this.newData = this.data.map((person: Person) => ({ ...person }));
 
 		if (this.TOTAL_STAFF <= 0 || this.TOTAL_GROUP <= 0 || this.DAY <= 0)
@@ -330,6 +330,14 @@ export class GroupService {
 					break;
 				}
 				console.log(`---------- [ Epoch ${epoch} ] ----------`);
+				postMessage({
+					data: {
+						groups: null, 
+						groupOfMembers: null, 
+						processingStatus: `Stage ${currentStage}.${epoch}`
+					},
+					errors: null
+				});
 
 				if (curScore > prevScore) {
 					alpha -= (4 * (1 - alpha)) / 5;

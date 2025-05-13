@@ -147,7 +147,7 @@
 		>
 			<div class="bg-white p-8 rounded-2xl shadow-xl text-center max-w-sm w-full space-y-4">
 				<!-- <p class="text-2xl font-semibold text-orange-600">Generating Groups</p> -->
-				<p class="text-2xl font-semibold text-orange-600">Currently in {processingStatusWord}{'.'.repeat((elapsedTime % 3) + 1)}</p>
+				<p class="text-2xl font-semibold text-orange-600">Currently in {processingStatusWord} {'.'.repeat((elapsedTime % 3) + 1)}</p>
 				<p class="text-lg">Elapsed Time: {elapsedTime} second{elapsedTime === 1 ? '' : 's'}</p>
 				<div class="flex justify-center">
 					<div
