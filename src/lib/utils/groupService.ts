@@ -13,7 +13,7 @@ export class GroupService {
 	readonly TOTAL_STAFF: number;
 	readonly MAX_GROUP_SIZE: number;
 	forbiddenSet: Set<string>;
-	weight: number = 4; // if a group have cost more than this value then consider it as a bad group
+	weight: number = 5; // if a group have cost more than this value then consider it as a bad group
 	cut: number = 1; // minimum number of invalid group per day to cut the schedule off
 	maxBadGroup: number = 4; // maximum number of bad group available per day
 	leader: Person[];
@@ -62,7 +62,7 @@ export class GroupService {
 
 		// default
 		this.maxBadGroup = Math.floor(this.TOTAL_GROUP / 3);
-		this.weight = 4;
+		this.weight = 5;
 		this.cut = 1;
 	}
 
@@ -241,9 +241,9 @@ export class GroupService {
 
 				if (conutGhost >= 1) to_cut++;
 
-				if (inva > 5) ack++;
+				if (inva > this.weight) ack++;
 				if (to_cut >= this.cut) ack += this.maxBadGroup + 1;
-				cost += inva;
+				cost += inva + this.weight * to_cut;
 			}
 			if (ack > this.maxBadGroup) conf++;
 		}
@@ -313,13 +313,11 @@ export class GroupService {
 				[curScore, curCost] = this.countConflicts(curScd);
 				T = 1.0;
 				cnt = 0;
-
-				if (curScore === 0) break;
 			}
 
-			const nextScd = this.modifySchedule(curScd);
-			const [nextScore, nextCost] = this.countConflicts(nextScd);
-			const delta = nextScore - curScore;
+			let nextScd = this.modifySchedule(curScd);
+			let [nextScore, nextCost] = this.countConflicts(nextScd);
+			let delta = nextScore - curScore;
 
 			if (delta < 0 || Math.exp(-delta / T) > Math.random()) {
 				curScd = nextScd;
@@ -340,6 +338,28 @@ export class GroupService {
 			if (curScore === 0) {
 				console.log('\n---- Successfully Generated! ----\n');
 				console.log(`\n---- Cost : ${curCost} ----\n`);
+
+				console.log('\n---- Optimize Processing... ----\n');
+				let opc = 1;
+				while (opc % (this.BATCH_SIZE * this.ITER) != 0) {
+					nextScd = this.modifySchedule(curScd);
+					[nextScore, nextCost] = this.countConflicts(nextScd);
+					delta = nextScore - curScore;
+
+					if (delta == 0 && nextCost < curCost) {
+						curScd = nextScd;
+						curScore = nextScore;
+						curCost = nextCost;
+					}
+
+					if (opc % this.BATCH_SIZE === 0) {
+						console.log(
+							`Batch: ${opc / this.BATCH_SIZE + 1}, Cost: ${curCost}`
+						);
+					}
+
+					opc++;
+				}
 				break;
 			}
 
