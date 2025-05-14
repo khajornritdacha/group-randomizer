@@ -8,6 +8,7 @@ export interface Person {
 	baan?: string;
 	status?: string;
 	id: number;
+	leaderCount?: number;
 }
 
 export type Group = Person[];

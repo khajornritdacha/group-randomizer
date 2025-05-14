@@ -8,15 +8,20 @@
 		groupOfMembers_store,
 		workbook_store,
 		data_store,
-		forbiddenPairs_store
+		forbiddenPairs_store,
+
+		leader_store
+
 	} from '../../store';
 	import LoadResult from '../../components/LoadResult.svelte';
+	import { X } from 'svelte-parts/icons/feather';
 
 	const MAX_COL = 12;
 	let page = 0,
 		col = 7;
 	let totalPages: Person[][][] = [];
 	let currentPageRows: Person[][] = [];
+	let currentData: Person[] = [];
 	let showDetail = false,
 		showSwappablePairs = false;
 
@@ -25,6 +30,7 @@
 
 	$: totalPages = $groups_store;
 	$: currentPageRows = totalPages.length > 0 ? totalPages[page] : [];
+	$: currentData = $data_store;
 
 	const setPage = (p: number) => {
 		if (p >= 0 && p < totalPages.length) {
@@ -191,6 +197,18 @@
 		secondMember = '';
 		return;
 	}
+
+	function selectLeader(member: Person) {
+		let memberIndex = currentData.findIndex(person => person.name === member.name);
+		if(currentData[memberIndex].leaderCount === undefined) currentData[memberIndex].leaderCount = 0;
+		currentData[memberIndex].leaderCount += 1;
+	}
+
+	function getLeaderCount(member: Person) {
+		let memberIndex = currentData.findIndex(person => person.name === member.name);
+		if(currentData[memberIndex].leaderCount === undefined) return 0;
+		return currentData[memberIndex].leaderCount;
+	}
 </script>
 
 <Background />
@@ -261,24 +279,41 @@
 				} text-white-secondary transition-all py-2 px-4 rounded-xl m-2`}
 			>
 				<h3 class="text-lg font-bold mb-2 flex justify-center text-white">Group : {i + 1}</h3>
-				{#each group as member}
-					{#if member.name !== '-'}
-						<p
-							class={`${
-								member.name === firstMember || member.name === secondMember
-									? 'bg-orange-600 text-white'
-									: hasForbiddenPairs(page, i, member)
-										? 'bg-red-500 text-white '
-										: 'text-orange-primary bg-white'
-							} text-center font-bold hover:bg-orange-200 border-2 border-orange-primary transition-all rounded-md py-1`}
-						>
-							{member.name}
-							{#if showDetail}
-								#{member.year} {member.faculty}
+				{#if group.length > 0}
+					<div class="flex flex-col">
+						{#each group as member}
+							{#if member.name !== '-'}
+								<button
+									on:click={() => {
+										let memberIndex = currentData.findIndex(person => person.name === member.name);
+										if(member.leaderCount === undefined || member.leaderCount == 0) member.leaderCount = 1;
+										else member.leaderCount = 0;
+										if(currentData[memberIndex].leaderCount === undefined) currentData[memberIndex].leaderCount = 0;
+										currentData[memberIndex].leaderCount += member.leaderCount > 0 ? 1 : -1;
+									}}
+									class={`${
+										member.name === firstMember || member.name === secondMember
+											? 'bg-orange-600 text-white'
+											: member.leaderCount !== undefined && member.leaderCount > 0
+												? 'bg-blue-500 text-white '
+												: hasForbiddenPairs(page, i, member)
+													? 'bg-red-500 text-white '
+														: 'text-orange-primary bg-white'
+									} text-center font-bold hover:bg-orange-200 border-2 border-orange-primary transition-all rounded-md py-1`}
+									
+								>
+									{#if getLeaderCount(member) > 0}
+										{'🎓'.repeat(getLeaderCount(member))}
+									{/if}
+									{member.name}
+									{#if showDetail}
+										#{member.year} {member.faculty}
+									{/if}
+								</button>
 							{/if}
-						</p>
-					{/if}
-				{/each}
+						{/each}
+					</div>
+				{/if}
 			</div>
 		{/each}
 	</div>
