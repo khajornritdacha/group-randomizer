@@ -9,3 +9,13 @@ export interface Person {
 	status?: string;
 	id: number;
 }
+
+export type Group = Person[];
+export type Day = Group[];
+export type Schedule = Day[];
+
+export interface RandomGroupResult {
+	groups: Person[][][];
+	groupOfMembers: number[][];
+	processingStatus?: string;
+}
