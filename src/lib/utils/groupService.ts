@@ -66,6 +66,17 @@ export class GroupService {
 		this.cut = 1;
 	}
 
+	updateProcessStatus(message: string): void {
+		postMessage({
+			data: {
+				groups: null, 
+				groupOfMembers: null, 
+				processingStatus: message
+			},
+			errors: null
+		});
+	}
+
 	randomGroup(): RandomGroupResult {
 		this.leftMaxGroupSize =
 			this.data.length - this.TOTAL_GROUP * Math.floor(this.data.length / this.TOTAL_GROUP);
@@ -84,14 +95,7 @@ export class GroupService {
 		console.log({ forbiddenSet: this.forbiddenSet });
 
 		console.log(`<---------- / Process 1 / ---------->`);
-		postMessage({
-			data: {
-				groups: null, 
-				groupOfMembers: null, 
-				processingStatus: 'Stage 1'
-			},
-			errors: null
-		});
+		this.updateProcessStatus('Stage 1');
 		let [basis, cost] = this.generateGroup(1);
 
 		// generate best result
@@ -99,14 +103,7 @@ export class GroupService {
 		if (cost < 0) {
 			for (let i = 0; i < this.PROCESS_RUN - 1; i++) {
 				console.log(`<---------- / Process ${i + 2} / ---------->`);
-				postMessage({
-					data: {
-						groups: null, 
-						groupOfMembers: null, 
-						processingStatus: `Stage ${i + 2}`
-					},
-					errors: null
-				});
+				// this.updateProcessStatus(`Stage ${i + 2}`);
 				this.weight <<= 1;
 				this.maxBadGroup <<= 1;
 				if (i > 0) this.cut++;
@@ -125,14 +122,7 @@ export class GroupService {
 		}
 
 		console.log(`<---------- / Result Cost ${cost} / ---------->`);
-		postMessage({
-			data: {
-				groups: null, 
-				groupOfMembers: null, 
-				processingStatus: `Calculating Result`
-			},
-			errors: null
-		});
+		this.updateProcessStatus(`Calculating Result`);
 
 		const groups = Array.from({ length: this.DAY }, () =>
 			Array.from({ length: this.TOTAL_GROUP }, () => [])
@@ -317,27 +307,13 @@ export class GroupService {
 				epoch++;
 				if (epoch == this.MAX_EPOCH) {
 					console.log('\n---- Unsuccessfully Generated :( ----\n');
-					postMessage({
-						data: {
-							groups: null, 
-							groupOfMembers: null, 
-							processingStatus: `Unsuccessfully Generated`
-						},
-						errors: null
-					});
+					this.updateProcessStatus(`Unsuccessfully Generated`);
 					if (curScore >= this.DAY) curCost = -2;
 					else curCost = -1;
 					break;
 				}
 				console.log(`---------- [ Epoch ${epoch} ] ----------`);
-				postMessage({
-					data: {
-						groups: null, 
-						groupOfMembers: null, 
-						processingStatus: `Stage ${currentStage}.${epoch}`
-					},
-					errors: null
-				});
+				this.updateProcessStatus(`Stage ${currentStage}.${epoch}`);
 
 				if (curScore > prevScore) {
 					alpha -= (4 * (1 - alpha)) / 5;
@@ -380,14 +356,7 @@ export class GroupService {
 				console.log(`\n---- Cost : ${curCost} ----\n`);
 				
 				console.log('\n---- Optimize Processing... ----\n');
-				postMessage({
-					data: {
-						groups: null, 
-						groupOfMembers: null, 
-						processingStatus: `Optimize Processing`
-					},
-					errors: null
-				});
+				this.updateProcessStatus(`Optimize Processing`);
 
 				let opc = 1;
 				while (opc % (this.BATCH_SIZE * this.ITER) != 0) {
