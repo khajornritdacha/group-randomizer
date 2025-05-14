@@ -3,7 +3,7 @@ import type { Person, Schedule, Day, Group, RandomGroupResult } from '$lib/types
 export class GroupService {
 	readonly BATCH_SIZE: number = 1000;
 	readonly ITER: number = 25;
-	readonly PROCESS_RUN: number = 4;
+	readonly PROCESS_RUN: number = 5;
 	readonly MAX_EPOCH: number = 4;
 	readonly C: number = 91;
 	readonly data: Person[];
@@ -16,6 +16,7 @@ export class GroupService {
 	weight: number = 5; // if a group have cost more than this value then consider it as a bad group
 	cut: number = 1; // minimum number of invalid group per day to cut the schedule off
 	maxBadGroup: number = 4; // maximum number of bad group available per day
+	forbiddenCount: number = 1; // 1 = count, 0 = not
 	leader: Person[];
 	newData: Person[];
 	leftMaxGroupSize: number; // Count number of groups that can have maximum group size
@@ -64,6 +65,7 @@ export class GroupService {
 		this.maxBadGroup = Math.floor(this.TOTAL_GROUP / 3);
 		this.weight = 5;
 		this.cut = 1;
+		this.forbiddenCount = 1;
 	}
 
 	updateProcessStatus(message: string): void {
@@ -103,14 +105,16 @@ export class GroupService {
 		if (cost < 0) {
 			for (let i = 0; i < this.PROCESS_RUN - 1; i++) {
 				console.log(`<---------- / Process ${i + 2} / ---------->`);
-				// this.updateProcessStatus(`Stage ${i + 2}`);
 				this.weight <<= 1;
 				this.maxBadGroup <<= 1;
 				if (i > 0) this.cut++;
-				if (i == this.PROCESS_RUN - 2) {
+				if (i == this.PROCESS_RUN - 3) {
 					this.maxBadGroup = this.TOTAL_GROUP;
 					this.cut = this.TOTAL_GROUP;
 					this.weight = 1e3;
+				}
+				if (i == this.PROCESS_RUN - 2) {
+					this.forbiddenCount = 0;
 				}
 				const [curBasis, curCost] = this.generateGroup(i + 2);
 				if (curCost >= 0) {
@@ -203,7 +207,7 @@ export class GroupService {
 						const key = `${u.id},${v.id}`;
 						if (meet.has(key)) conf++;
 						else meet.add(key);
-						if (this.forbiddenSet.has(key)) conf++;
+						if (this.forbiddenSet.has(key)) conf += this.forbiddenCount;
 						if (u.name === '-') conutGhost++;
 						if (u.status == v.status) {
 							if (u.status === 'ใหม่') countNew++;
@@ -297,7 +301,7 @@ export class GroupService {
 		let prevScore = 1e9;
 
 		let T = 1.0;
-		let alpha = 0.5;
+		let alpha = 0.3;
 
 		let epoch = 0;
 		let cnt = 0;
