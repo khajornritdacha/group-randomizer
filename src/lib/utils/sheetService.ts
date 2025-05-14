@@ -108,6 +108,13 @@ export function handleDownload(
 	utils.book_append_sheet(out_wb, workbook.Sheets['database'], 'database');
 
 	createGroupAssignSheet(out_wb, groupOfMembers.length, groupOfMembers[0].length);
+
+	for (let i = 0; i < groupOfMembers.length; i++) {
+		for (let j = 0; j < groupOfMembers[i].length; j++) {
+			groupOfMembers[i][j] += 1;
+		}
+	}
+
 	utils.sheet_add_aoa(out_wb.Sheets[GROUP_ASSIGN_SHEET_NAME], groupOfMembers, {
 		origin: 'B2'
 	});
