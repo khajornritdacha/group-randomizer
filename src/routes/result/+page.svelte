@@ -2,7 +2,7 @@
 	import { handleDownload } from '$lib/utils/sheetService';
 	import type { Person } from '$lib/types';
 	import Background from '../../components/Background.svelte';
-	import DownloadButton from '../../components/DownloadButton.svelte';
+	import DownloadButton from '../../components/GenerateButton.svelte';
 	import {
 		groups_store,
 		groupOfMembers_store,

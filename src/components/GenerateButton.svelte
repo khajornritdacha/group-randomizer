@@ -11,7 +11,7 @@
 <button
 	class="text-3xl bg-orange-primary hover:bg-orange-primary-darken text-white-secondary transition-all font-bold py-6 px-6 rounded-2xl inline-flex justify-center items-center cursor-pointer disabled:opacity-50 disabled:pointer-events-none font-scaryHalloween"
 	on:click={handleClick}
-	aria-label="Download"
+	aria-label="Generate"
 	disabled={group_cnt === 0}
 >
 	<svg

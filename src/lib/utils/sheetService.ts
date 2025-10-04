@@ -1,3 +1,4 @@
+import { FORBIDDEN_PAIR_SHEET_NOT_FOUND } from '$lib/constants';
 import type { Person } from '$lib/types';
 import { type WorkBook, writeFile, utils, type CellObject } from 'xlsx';
 
@@ -6,13 +7,25 @@ const CONTROL_SHEET_NAME = 'control';
 
 export function loadFromSheet(workbook: WorkBook, sheetName: string) {
 	const data: Person[] = [];
+	if (!workbook.Sheets[sheetName]) {
+		throw new Error(`Sheet ${sheetName} not found in the workbook. Please recheck the sheet name.`);
+	}
 	for (let i = 2; ; i++) {
-		if (!workbook.Sheets[sheetName][`A${i}`]) break;
+		if (!workbook.Sheets[sheetName][`A${i}`]) {
+			console.log(`Loaded ${i - 2} entries from sheet ${sheetName}.`);
+			break;
+		}
+		const requiredColumns = ['A', 'B', 'C', 'E', 'F', 'G', 'H']; 
+		for (const col of requiredColumns) {
+			if (!workbook.Sheets[sheetName][`${col}${i}`]) {
+				throw new Error(`Missing required data in column ${col} at row ${i} in sheet ${sheetName}.`);
+			}
+		}
 		data.push({
 			name: workbook.Sheets[sheetName][`A${i}`].v,
 			gender: workbook.Sheets[sheetName][`B${i}`].v,
 			faculty: workbook.Sheets[sheetName][`C${i}`].v,
-			field: workbook.Sheets[sheetName][`D${i}`].v,
+			field: workbook.Sheets[sheetName][`D${i}`]?.v,
 			year: workbook.Sheets[sheetName][`E${i}`].v,
 			section: workbook.Sheets[sheetName][`F${i}`].v,
 			baan: workbook.Sheets[sheetName][`G${i}`].v,
@@ -25,6 +38,9 @@ export function loadFromSheet(workbook: WorkBook, sheetName: string) {
 
 export function loadForbiddenPairs(workbook: WorkBook) {
 	const sheetName = 'forbidden_pairs';
+	if (!workbook.Sheets[sheetName]) {
+		throw new Error(FORBIDDEN_PAIR_SHEET_NOT_FOUND);
+	}
 	const data: string[][] = [];
 	for (let i = 1; ; i++) {
 		if (!workbook.Sheets[sheetName][`A${i}`]) break;

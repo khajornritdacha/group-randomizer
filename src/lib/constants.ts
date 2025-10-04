@@ -1,0 +1,1 @@
+export const FORBIDDEN_PAIR_SHEET_NOT_FOUND = 'Sheet forbidden_pairs not found in the workbook, if provided please recheck the sheet name.';

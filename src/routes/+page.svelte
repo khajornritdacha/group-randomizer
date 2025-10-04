@@ -3,7 +3,7 @@
 	import { type RandomGroupResult } from '$lib/types';
 	import GroupServiceWorker from '$lib/utils/groupServierWorker.ts?worker';
 	import Background from '../components/Background.svelte';
-	import DownloadButton from '../components/DownloadButton.svelte';
+	import DownloadButton from '../components/GenerateButton.svelte';
 	import DropMember from '../components/DropMember.svelte';
 	import ForbiddenPair from '../components/ForbiddenPair.svelte';
 	import GroupInformation from '../components/GroupInformation.svelte';
