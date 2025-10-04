@@ -7,14 +7,9 @@
 	import DropMember from '../components/DropMember.svelte';
 	import ForbiddenPair from '../components/ForbiddenPair.svelte';
 	import GroupInformation from '../components/GroupInformation.svelte';
-	import { data_store, groupOfMembers_store, groups_store, leader_store } from '../store';
+	import { data_store, groupOfMembers_store, groups_store, leader_store, group_cnt_store, day_store, forbiddenPairs_store } from '../store';
 	import toast, { Toaster } from 'svelte-french-toast';
-
-	let group_cnt = 0;
-	let day = 1;
-	let disableGenerateControlSheet: boolean = true;
-	let forbiddenPairs: string[][] = [];
-	let enableForbiddenPairs: boolean = false;
+	
 	let isLoading = false;
 	let intervalId: number | null = null;
 	let elapsedTime = 0;
@@ -48,9 +43,9 @@
 			data: {
 				members: $data_store,
 				leader: $leader_store,
-				group_cnt,
-				forbiddenPairs,
-				day
+				group_cnt: $group_cnt_store,
+				forbiddenPairs: $forbiddenPairs_store,
+				day: $day_store
 			}
 		});
 
@@ -121,23 +116,19 @@
 	</div>
 
 	<div
-		class={`flex flex-col justify-${
-			enableForbiddenPairs ? 'between' : 'center'
-		} items-center px-[5%] basis-1/2 min-h-[100vh]`}
+		class={`flex flex-col justify-between items-center px-[5%] basis-1/2 min-h-[100vh]`}
 	>
-		<div class={`flex flex-col justify-between gap-3 ${enableForbiddenPairs && 'pt-10'}`}>
+		<div class={`flex flex-col justify-between gap-3 pt-10`}>
 			<GroupInformation
-				bind:group_cnt
-				bind:day
-				bind:disableGenerateControlSheet
-				bind:enableForbiddenPairs
+				bind:group_cnt={$group_cnt_store}
+				bind:day={$day_store}
 			/>
 		</div>
-		{#if enableForbiddenPairs}
-			<ForbiddenPair bind:forbiddenPairs />
-		{/if}
-		<div class={`flex flex-col justify-between gap-3 ${enableForbiddenPairs && 'py-5'}`}>
-			<DownloadButton on:click={handleDownloadButton} {group_cnt} />
+		<div class={`flex flex-col justify-between py-5`}>
+			<ForbiddenPair bind:forbiddenPairs={$forbiddenPairs_store} />
+		</div>
+		<div class={`flex flex-col justify-between gap-3 py-5`}>
+			<DownloadButton on:click={handleDownloadButton} group_cnt={$group_cnt_store} />
 		</div>
 	</div>
 	{#if isLoading}
