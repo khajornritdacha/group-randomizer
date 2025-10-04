@@ -32,6 +32,9 @@
 		"vite": "^5.0.3"
 	},
 	"type": "module",
+	"engines": {
+		"node": "20.x"
+	},
 	"dependencies": {
 		"svelte-french-toast": "^1.2.0",
 		"svelte-parts": "^0.0.6",
